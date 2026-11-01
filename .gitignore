@@ -1,0 +1,38 @@
+# ---- Secretos (nunca al repo) ----
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+secrets/
+
+# ---- Datos reales del negocio (repo público) ----
+# La entrevista respondida y cualquier Excel/CSV en la raíz son privados.
+/*.xlsx
+/*.csv
+# Excepción: la plantilla en blanco de la entrevista sí se publica.
+!docs/entrevista/Guia_Entrevista_Sistema_Almacen.xlsx
+
+# ---- Python ----
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# ---- Node / frontend ----
+node_modules/
+dist/
+
+# ---- Editores y sistema ----
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.DS_Store
+Thumbs.db
+
+# ---- Temporales ----
+*.log
+.tmp-*/

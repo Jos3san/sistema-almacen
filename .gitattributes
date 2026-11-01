@@ -1,0 +1,15 @@
+# Todo archivo de texto se guarda con fin de línea LF (Linux), aunque se edite en Windows.
+# Evita errores en contenedores Docker, que corren Linux.
+* text=auto eol=lf
+
+# Scripts de Windows: mantienen CRLF para que PowerShell y cmd los lean bien.
+*.ps1 text eol=crlf
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# Archivos binarios: Git no debe tocar su contenido.
+*.xlsx binary
+*.png  binary
+*.jpg  binary
+*.pdf  binary
+*.zip  binary
