@@ -59,7 +59,7 @@ Esto permite generar el changelog y decidir la versión automáticamente.
 - Código revisado en PR y fusionado a `main`.
 - Tests automáticos de cada regla de negocio involucrada, en verde en CI.
 - Migración de BD incluida si cambió el esquema.
-- API documentada en OpenAPI.
+- API documentada en OpenAPI; docstrings en el código y guía `docs/codigo/<servicio>.md` actualizada.
 - Desplegada en staging y verificada (staging existe desde la semana 5; antes, verificada con Docker Compose en local).
 - Documentación/ADR actualizada si cambió una decisión.
 

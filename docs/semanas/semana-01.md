@@ -41,23 +41,23 @@ Extensiones que se agregan al llegar su capa (no antes):
 Herramientas verificadas. Ajustes encontrados antes de la sección B:
 
 - [x] R1 · PowerShell bloquea scripts (política `Restricted`), así que `npm` va a fallar → el usuario la cambia a `RemoteSigned` solo para su cuenta 🛠️
-- [ ] R2 · Git crea la rama `master` por defecto; el proyecto usa `main` → `init.defaultBranch main` 🛠️
+- [x] R2 · Git crea la rama `master` por defecto; el proyecto usa `main` → `init.defaultBranch main` 🛠️
 - [x] R3 · Finales de línea: Windows usa CRLF y Linux/Docker LF → `.gitattributes` con `eol=lf` 🧑‍🏫 (creado 31/10)
 - [x] R4 · Archivos sobrantes de la planificación: `PRIMER_PROMPT.md` y `sistema-almacen.zip` → borrados (31/10)
 - [x] R5 · El repo será público: el dueño aceptó portafolio **con datos ficticios y sin el nombre del negocio** → la entrevista respondida y la copia real de los docs se movieron a `D:/proyectoLibreria-privado` (31/10); los docs del repo quedaron anonimizados y `.gitignore` excluye `/*.xlsx`
 
 ## B. Git y GitHub
-- [ ] B1 · `git init` en el proyecto (`.gitignore` y `.gitattributes` ya creados el 31/10) 🛠️
-- [ ] B2 · Primer commit con la documentación (Conventional Commits: `docs: ...`)
-- [ ] B3 · Repo en GitHub y primer push
-- [ ] B4 · Proteger `main`: solo entra por PR, sin exigir aprobaciones (trabajas solo; T-02 en docs/07)
+- [x] B1 · `git init` en el proyecto (`.gitignore` y `.gitattributes` creados el 31/10) 🛠️
+- [x] B2 · Primer commit con la documentación (`2bc43fa docs: add project planning, analysis and design documentation`, 31/10)
+- [x] B3 · Repo público `Jos3san/sistema-almacen` y primer push (31/10); GitHub dibuja los diagramas Mermaid
+- [x] B4 · Ruleset `proteger-main` activo (sin bypass): PR obligatorio con 0 aprobaciones, sin borrar ni force push; Actions exige aprobación a todo contribuyente externo (31/10)
 - [ ] B5 · Tablero GitHub Projects con las historias de la semana 2
 
 ## C. API "hola mundo"
-- [ ] C1 · Crear `services/core` con `uv init`
-- [ ] C2 · Endpoint `GET /health` con FastAPI
-- [ ] C3 · Primer test con pytest
-- [ ] C4 · Ruff sin errores
+- [x] C1 · Crear `services/core` con `uv init` en la rama `feat/core-health` (05/11); uv generó la estructura de paquete `src/core/`, que se adoptó en docs/06
+- [x] C2 · Endpoint `GET /health` con FastAPI 0.162 (05/11): responde 200 `{"status": "ok"}`; `/docs` funciona
+- [x] C3 · Primer test con pytest 9.2 (05/11): `tests/test_health.py`, 1 passed; se vio fallar a propósito. Código documentado (docstrings) y guía `docs/codigo/core.md`
+- [x] C4 · Ruff 0.17 sin errores (05/11): reglas E, F, I, B, UP; lint y formato en verde; se vio fallar a propósito (F401 por un import sin usar y un error de formato)
 - [ ] C5 · Todo entra a `main` por un PR
 
 ## Notas

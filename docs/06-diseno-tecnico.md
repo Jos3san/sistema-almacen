@@ -160,8 +160,8 @@ sequenceDiagram
 ```
 /
 ├── services/
-│   ├── auth/            app/ (api, domain, db), tests/, migrations/, Dockerfile, pyproject.toml
-│   └── core/            app/ (catalog, stock, orders, dispatch, reports), tests/, migrations/, Dockerfile, pyproject.toml
+│   ├── auth/            src/auth/ (api, domain, db), tests/, migrations/, Dockerfile, pyproject.toml
+│   └── core/            src/core/ (catalog, stock, orders, dispatch, reports), tests/, migrations/, Dockerfile, pyproject.toml
 ├── libs/
 │   └── security/        validación de JWT y permisos, compartida por auth y core (ADR-0007)
 ├── frontend/            Vite + React + TypeScript

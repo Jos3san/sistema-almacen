@@ -40,6 +40,7 @@ Detalle en `docs/03-modelo-datos-y-reglas.md`.
 - Código, nombres de API y commits en inglés; interfaz de usuario en español; moneda PEN; zona horaria America/Lima.
 - Montos `NUMERIC(12,2)`, nunca float.
 - Cada regla de negocio con su test automático.
+- **Documentar el código**: cada módulo, función y test con *docstring* en inglés (qué hace y para qué; los endpoints la muestran en `/docs`). La explicación en español para aprender va en `docs/codigo/<servicio>.md` y se actualiza **en el mismo PR** que cambia el código.
 - Decisiones de arquitectura en `docs/adr/`.
 - Secretos solo en `.env` (nunca en el repo).
 
@@ -60,6 +61,7 @@ Detalle en `docs/03-modelo-datos-y-reglas.md`.
 - `docs/06-diseno-tecnico.md` — ruta del diseño (D1–D7), arquitectura C4, seguridad, flujos, estructura del repo, catálogo de permisos (D2)
 - `docs/07-backlog.md` — backlog del MVP (D3): historias HU y técnicas T por semana; detalle completo hasta la semana 3
 - `docs/08-glosario.md` — términos del negocio y siglas (agregar aquí toda sigla nueva)
+- `docs/codigo/` — guía en español del código de cada servicio (estructura, archivos, funciones, comandos); `core.md` desde el 05/11
 - `docs/entrevista/resultados.md` — resumen de la entrevista, decisiones, riesgos y pendientes
 - `D:/proyectoLibreria-privado/Guia_Entrevista_Sistema_Almacen.xlsx` (**privado, fuera del repo**) — **entrevista respondida**: col. G = respuesta original; col. J–N = respuesta consolidada, decisión, RF/RNF, UC y alcance (fuente para generar documentos)
 - `D:/proyectoLibreria-privado/docs-reales/` y `CLAUDE-real.md` — copia de los docs con las cifras reales del negocio (31/10/2026). Si un doc público cambia una decisión, actualizar también la copia privada si afecta a cifras reales.
