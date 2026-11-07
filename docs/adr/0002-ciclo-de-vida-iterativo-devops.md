@@ -7,7 +7,9 @@
 Los requerimientos dependen de una entrevista pendiente, y el desarrollador quiere aprender DevOps y microservicios practicando.
 
 ## Decisión
-Modelo iterativo e incremental: cada capa del roadmap recorre Plan → Code → Build → Test → Release → Deploy → Operate → Monitor y termina desplegada. Flujo trunk-based con ramas cortas, PR obligatorio con CI en verde, Conventional Commits y SemVer por servicio. Detalle en `docs/00-ciclo-de-vida.md`.
+Modelo iterativo e incremental: cada capa del roadmap recorre Plan → Code → Build → Test → Release → Deploy → Operate → Monitor y termina desplegada. Flujo trunk-based con ramas cortas, PR obligatorio con CI en verde, Conventional Commits y SemVer: en el MVP una sola versión para todo el sistema (se despliega junto); por servicio cuando se desplieguen por separado. Detalle en `docs/00-ciclo-de-vida.md`.
+
+_Actualizado el 07/11/2026: decía "SemVer por servicio", lo que contradecía la versión única del MVP acordada en docs/00._
 
 ## Alternativas consideradas
 - Cascada: requiere requerimientos cerrados que no tenemos; el ciclo DevOps se practicaría una sola vez al final.

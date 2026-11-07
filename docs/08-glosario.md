@@ -68,6 +68,11 @@ Términos y siglas usados en la documentación del proyecto. Ordenados por tema.
 | Gateway | Puerta de entrada única del sistema (Caddy) |
 | Outbox | Patrón para publicar eventos sin perderlos (ADR-0004, después del MVP) |
 | Idempotencia | Repetir una operación da el mismo resultado; evita pedidos duplicados (`Idempotency-Key`) |
+| KISS | *Keep It Simple*: elegir la solución más simple que funcione (docs/06 D1.11) |
+| YAGNI | *You Aren't Gonna Need It*: no construir algo "por si acaso" |
+| DRY | *Don't Repeat Yourself*: cada regla del negocio vive en un solo lugar |
+| SOLID | Cinco principios de diseño de código; aquí se aplica sobre todo la responsabilidad única y depender de contratos |
+| Capas (api / service / repository) | Organización de cada módulo: HTTP / reglas de negocio / consultas a la base (docs/06 D1.11) |
 | Health check | Ruta (`/health`) que indica si un servicio está vivo y listo |
 | OpenAPI | Formato estándar para documentar una API; FastAPI lo genera solo en `/docs` |
 | SKU | *Stock Keeping Unit*: código interno único de un producto |
@@ -106,6 +111,16 @@ Términos y siglas usados en la documentación del proyecto. Ordenados por tema.
 | CORS | *Cross-Origin Resource Sharing*: regla del navegador sobre qué sitios pueden llamar a la API |
 | RBAC | *Role-Based Access Control*: permisos agrupados en perfiles (docs/06 D2) |
 | argon2 | Algoritmo para guardar contraseñas de forma segura (no es sigla) |
+| OWASP Top 10 | Lista de referencia de los 10 riesgos más comunes en aplicaciones web (docs/06 D1.10) |
+| DevSecOps | DevOps con la seguridad automatizada dentro del pipeline (escaneos en cada PR) |
+| SAST | *Static Application Security Testing*: revisar el código en busca de fallas de seguridad sin ejecutarlo (Ruff `S`, CodeQL) |
+| CVE | *Common Vulnerabilities and Exposures*: identificador público de una vulnerabilidad conocida (ej. CVE-2025-1234) |
+| XSS | *Cross-Site Scripting*: inyectar un script en una página para que corra en el navegador de otro usuario |
+| CSRF | *Cross-Site Request Forgery*: que otro sitio haga peticiones usando tu sesión; lo frena `SameSite=Strict` |
+| CSP | *Content Security Policy*: cabecera que limita de dónde puede cargar scripts una página |
+| HSTS | *HTTP Strict Transport Security*: cabecera que obliga al navegador a usar siempre HTTPS |
+| Clickjacking | Incrustar el sistema en otra página para engañar al usuario y que haga clic donde no quiere |
+| Responsabilidad compartida | La nube protege su hardware y su red; lo que corre encima (servidor, código, datos) lo protegemos nosotros |
 | SSH | *Secure Shell*: acceso remoto cifrado al servidor |
 | UFW | *Uncomplicated Firewall*: cortafuegos de Ubuntu |
 
@@ -124,6 +139,10 @@ Términos y siglas usados en la documentación del proyecto. Ordenados por tema.
 | LTS | *Long Term Support*: versión con soporte extendido |
 | WSL | *Windows Subsystem for Linux*: Linux dentro de Windows (lo usa Docker) |
 | GHCR | *GitHub Container Registry*: donde se guardan las imágenes Docker |
+| Imagen / contenedor | Paquete inmutable con el servicio y todo lo que necesita / esa imagen en ejecución |
+| Multi-stage | Dockerfile en etapas: una construye, la final solo lleva lo necesario para ejecutar |
+| Dependabot | Servicio de GitHub que avisa de dependencias vulnerables y abre PRs para actualizarlas |
+| pip-audit / Trivy / CodeQL | Escáneres: dependencias Python / imágenes Docker / código fuente |
 | SemVer | Versionado semántico `MAYOR.MENOR.PARCHE` (ej. v1.2.3) |
 | CRLF / LF | Fin de línea de Windows / de Linux; el repo usa LF |
 | RPO | *Recovery Point Objective*: datos que se pueden perder como máximo (1 h) |

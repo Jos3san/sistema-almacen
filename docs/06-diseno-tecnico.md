@@ -160,7 +160,7 @@ sequenceDiagram
 ```
 /
 ├── services/
-│   ├── auth/            src/auth/ (api, domain, db), tests/, migrations/, Dockerfile, pyproject.toml
+│   ├── auth/            src/auth/ (módulos con capas, D1.11), tests/, migrations/, Dockerfile, pyproject.toml
 │   └── core/            src/core/ (catalog, stock, orders, dispatch, reports), tests/, migrations/, Dockerfile, pyproject.toml
 ├── libs/
 │   └── security/        validación de JWT y permisos, compartida por auth y core (ADR-0007)
@@ -199,7 +199,7 @@ sequenceDiagram
 | RNF | Cómo lo cumple el diseño | Dónde se comprueba |
 | --- | --- | --- |
 | RNF-01 Web responsive | Frontend celular primero en el mismo dominio que la API | T-13, HU-06, bocetos D6 |
-| RNF-02 HTTPS, hash, JWT | Caddy con HTTPS, argon2, JWT RS256 de 15 min y refresh rotado | D1.3, HU-01 a HU-03, T-14 |
+| RNF-02 HTTPS, hash, JWT | Caddy con HTTPS, argon2, JWT RS256 de 15 min y refresh rotado; riesgos OWASP cubiertos en D1.10 | D1.3, D1.10, HU-01 a HU-03, T-14, T-20 |
 | RNF-03 Stock nunca negativo | `FOR UPDATE` en orden por producto + CHECK en la base | D1.4, docs/03 regla 11, tests de concurrencia (D7) |
 | RNF-04 RPO ≤ 1 h | Archivado continuo de WAL + backup diario fuera del servidor | D1.2, T-16, T-17 |
 | RNF-05 Kardex inmutable | La base niega UPDATE y DELETE al usuario de la aplicación | D1.6 |
@@ -219,6 +219,75 @@ Los clientes y usuarios tienen datos personales (DNI/RUC, dirección, teléfono,
 - Viajan cifrados (HTTPS) y los backups se guardan cifrados (D1.2).
 - No salen en logs (D1.7) ni en el repo: staging y el portafolio usan solo **datos ficticios**.
 - Se guarda solo lo necesario para vender y entregar (#37).
+
+## D1.10 Seguridad de la aplicación
+**Responsabilidad compartida:** el proveedor de nube protege el hardware, el centro de datos y su red. Todo lo que corre encima es nuestro: el sistema operativo del servidor, los contenedores, el código, los datos y los secretos. Un vendedor que ve costos cambiando una URL no lo detecta la nube: lo frena el código. En el MVP, sobre un VPS, también administramos el servidor (docs/04: UFW, SSH con llave, fail2ban).
+
+### Riesgos OWASP Top 10 (2025) y nuestra defensa
+| Riesgo | Qué es | Defensa en este sistema | Dónde |
+| --- | --- | --- | --- |
+| A01 Control de acceso roto | Hacer o ver algo sin permiso | Cada endpoint exige su permiso en el backend y aplica las reglas de alcance (el repartidor solo ve sus despachos). El frontend oculta botones, pero **no es la seguridad**. Cada endpoint protegido tiene tests de 401 (sin token) y 403 (sin permiso) | D1.3, D2, D7 |
+| A02 Configuración insegura | Valores por defecto, puertos abiertos, errores con detalle | Cabeceras de seguridad en Caddy; PostgreSQL sin puerto publicado (solo red interna de Docker); CORS solo en desarrollo; contenedores no root con código de solo lectura; firewall solo 22, 80 y 443 | T-05, T-07, docs/04 |
+| A03 Cadena de suministro | Una librería, imagen o acción de CI comprometida o vulnerable | `uv.lock` con versiones exactas y hashes; imágenes base con versión fija; Dependabot; pip-audit y Trivy en CI; acciones de GitHub con versión fija; `main` solo por PR | T-05, T-20 |
+| A04 Fallas criptográficas | Datos sin cifrar o mal cifrados | HTTPS en todo (HSTS desde staging); contraseñas con argon2; JWT RS256 con claves por entorno; backups cifrados | D1.3, T-14, T-16 |
+| A05 Inyección | Datos del usuario interpretados como código (SQL, HTML, fórmulas) | SQLAlchemy con parámetros, **nunca** SQL armado con texto (Ruff `S608`); validación de entrada con Pydantic; React escapa lo que muestra (prohibido `dangerouslySetInnerHTML`); las exportaciones a Excel/CSV neutralizan celdas que empiezan con `=`, `+`, `-` o `@` (inyección de fórmulas); el PDF escapa los textos | D1.11, HU de importación y reportes |
+| A06 Diseño inseguro | Fallas de lógica que ningún escáner detecta | Reglas críticas garantizadas por la base (CHECK contra negativos, kardex sin UPDATE/DELETE, números únicos); idempotencia; casos de uso revisados con sus hallazgos | docs/03, D1.6, docs/05 |
+| A07 Fallas de autenticación | Robo o adivinación de sesiones y contraseñas | Bloqueo tras 5 intentos; access de 15 min en memoria; refresh rotado con detección de reuso; cookie `HttpOnly` + `Secure` + `SameSite=Strict` (también frena CSRF); el login responde igual si el correo no existe o la clave es incorrecta | D1.3, HU-01 a HU-03 |
+| A08 Fallas de integridad | Aceptar datos o software sin verificar su origen | El JWT se valida con algoritmo **fijo RS256** (se rechazan `none` y `HS256`), más `iss`, `aud` y `exp`; las imágenes se construyen en CI y producción despliega solo desde un tag | ADR-0007, docs/00 |
+| A09 Fallas de registro y alertas | No enterarse de un ataque | Auditoría de negocio; logs JSON con `X-Request-ID` (logins fallidos y bloqueos incluidos), sin datos sensibles; monitor externo con alerta al celular | D1.7, T-09 |
+| A10 Mal manejo de errores | Fallar de forma insegura o revelar detalles internos | Un manejador global devuelve un mensaje genérico y el `X-Request-ID`, nunca la traza (*stack trace*); transacciones con `ROLLBACK`; si no se puede validar el token, se niega el acceso (*fail closed*) | D1.4, T-09 |
+
+### Cabeceras de seguridad (Caddy, T-07)
+| Cabecera | Para qué |
+| --- | --- |
+| `X-Content-Type-Options: nosniff` | El navegador no "adivina" el tipo de un archivo (evita ejecutar como script lo que no lo es) |
+| `X-Frame-Options: DENY` | Nadie puede incrustar el sistema en otra página (*clickjacking*) |
+| `Referrer-Policy: strict-origin-when-cross-origin` | No filtrar rutas internas a otros sitios |
+| `Permissions-Policy` | Desactiva cámara, micrófono y ubicación, que el sistema no usa |
+| Quitar `Server` | No anunciar qué software y versión corren |
+| `Strict-Transport-Security` (HSTS) | Obliga a usar HTTPS. Se activa con HTTPS real (T-14), no en local |
+| `Content-Security-Policy` (CSP) | Limita de dónde se cargan scripts (freno al XSS). Se define con el frontend (T-13); `/docs` necesita una excepción porque carga Swagger UI desde un CDN |
+
+### DevSecOps: la seguridad automatizada en el pipeline
+| Práctica | Qué revisa | Cuándo |
+| --- | --- | --- |
+| Secret scanning + push protection (GitHub) | Rechaza un `git push` que contenga una clave o token | Activar en la semana 2 |
+| Dependabot (alertas + PRs de actualización) | Librerías Python, imágenes Docker y acciones de GitHub con vulnerabilidades o desactualizadas | Semana 2 |
+| Ruff con reglas `S` (Bandit) | Código inseguro: contraseñas en el código, SQL armado con texto, `assert` usado como control | T-20 |
+| pip-audit | Dependencias de `uv.lock` con vulnerabilidades conocidas (CVE) | T-20, en cada PR |
+| Trivy | Paquetes del sistema y de Python dentro de la imagen Docker; falla con vulnerabilidades altas o críticas que ya tienen arreglo | T-20, en cada PR |
+| CodeQL (GitHub) | Análisis estático profundo del código (SAST) | T-20 |
+| Permisos mínimos en GitHub Actions | Cada workflow declara `permissions: contents: read` salvo que necesite más | T-08 |
+
+Al cerrar cada capa, la retrospectiva (docs/00) repasa esta tabla de riesgos: qué cambió y qué falta.
+
+## D1.11 Principios de código
+Reglas para que el código siga siendo fácil de cambiar y de probar a medida que crece. Se revisan en cada PR.
+
+| Principio | Significa | Aplicación aquí |
+| --- | --- | --- |
+| KISS | La solución más simple que funcione | Tabla contador para los correlativos; un servidor al inicio; `/health` sin capas |
+| YAGNI | No construir "por si acaso" | Broker, reportes y notificaciones después del MVP (ADR-0005) |
+| DRY | Cada **regla** vive en un solo lugar | "Disponible = físico − reservado" en una sola función; validación de JWT solo en `libs/security`. Dos funciones parecidas que representan cosas distintas del negocio pueden seguir separadas |
+| Separación de responsabilidades | Cada pieza hace una cosa | Caddy enruta, auth autentica, core lleva el negocio |
+| SOLID, en versión ligera | Responsabilidad única, depender de contratos | Capas de abajo; dependencias inyectadas con `Depends()` de FastAPI, para usar una base de prueba en los tests |
+
+**Capas dentro de cada módulo** (los módulos de core y de auth, D1.5); se crean cuando aparece la lógica de negocio, desde la semana 3:
+
+```
+<modulo>/
+├── api.py          HTTP: rutas, permiso exigido, esquemas de entrada y salida. Sin reglas de negocio
+├── service.py      reglas de negocio (docs/03) y la transacción del caso de uso. No conoce HTTP
+├── repository.py   consultas SQL con SQLAlchemy (SELECT ... FOR UPDATE, inserts del kardex)
+├── models.py       tablas (SQLAlchemy)
+└── schemas.py      datos de entrada y salida (Pydantic)
+```
+
+- Las dependencias van en un solo sentido: `api` → `service` → `repository`. Un `service` no usa `Request` ni `HTTPException`: lanza errores del dominio y `api` los traduce a 400/403/404/409. Así cada regla se prueba sin levantar la API.
+- Una transacción por caso de uso, abierta en el `service`.
+- Un módulo usa a otro solo por su `service` público, nunca su `repository` ni sus tablas (ADR-0003).
+- Anotaciones de tipo y *docstring* en inglés en todo el código (convención de CLAUDE.md).
+- Medible en CI: Ruff `C90` avisa si una función es demasiado compleja (máximo 10). Si algo es difícil de testear, suele estar mal separado.
 
 
 ---

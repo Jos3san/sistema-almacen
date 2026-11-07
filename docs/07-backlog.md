@@ -12,7 +12,7 @@ Parte D3 del diseño (docs/06). Cada historia será un **Issue** en GitHub y una
 | Semana | Capa | Historias |
 | --- | --- | --- |
 | 1 | 0. Preparación | T-01 a T-04 |
-| 2 | 1. Base técnica | T-05 a T-10 |
+| 2 | 1. Base técnica | T-05 a T-10, T-20 |
 | 3 | 2. Auth | HU-01 a HU-06, T-11 a T-13 |
 | 4 | 3. Catálogo | HU-07 a HU-13 |
 | 5 | 4. Stock | HU-14 a HU-20, T-14 |
@@ -58,12 +58,14 @@ Parte D3 del diseño (docs/06). Cada historia será un **Issue** en GitHub y una
 ### T-07 Gateway con Caddy · M
 - `/api/core/*` llega a core sin el prefijo (`root_path` configurado: `/api/core/docs` muestra la documentación).
 - Caddy agrega `X-Request-ID` y limita el tamaño de las peticiones.
+- Caddy agrega las cabeceras de seguridad y quita `Server` (docs/06 D1.10); HSTS y CSP llegan después (T-14 y T-13).
 - En local funciona con `http://localhost` (el navegador lo trata como seguro). HTTPS real llega con staging en la semana 5 (T-14).
 
 ### T-08 Integración continua (CI) · M
 - GitHub Actions en cada PR: Ruff (lint y formato) y pytest.
 - Los tests de integración usan PostgreSQL real (Testcontainers o servicio de Actions).
 - La protección de `main` exige la CI en verde para fusionar.
+- El workflow declara permisos mínimos (`permissions: contents: read`) y usa acciones con versión fija (docs/06 D1.10).
 
 ### T-09 Logs estructurados · S
 - core escribe logs en JSON a la salida estándar, con el `X-Request-ID` de cada petición.
@@ -72,6 +74,13 @@ Parte D3 del diseño (docs/06). Cada historia será un **Issue** en GitHub y una
 ### T-10 Primera migración con Alembic · S
 - Alembic configurado en core; una migración inicial vacía se aplica con un contenedor de un solo uso antes de levantar core (docs/06 D1.5).
 - Dos usuarios de base: el dueño del esquema (`MIGRATION_DATABASE_URL`, solo para migraciones) y el de la aplicación con permisos mínimos (`DATABASE_URL`), con `ALTER DEFAULT PRIVILEGES` para las tablas futuras (docs/06 D1.6).
+
+### T-20 Seguridad automatizada en el pipeline (DevSecOps) · M
+- Secret scanning con push protection y alertas de Dependabot activos en GitHub.
+- `.github/dependabot.yml` revisa cada semana las dependencias de uv, las imágenes Docker y las acciones de GitHub.
+- La CI corre Ruff con las reglas `S` (seguridad; en `tests/` se permite `assert`, regla `S101`) y `C90` (complejidad, máximo 10), pip-audit sobre las dependencias y Trivy sobre la imagen de core; falla con vulnerabilidades altas o críticas que tengan arreglo.
+- CodeQL activo para Python.
+- Detalle y motivo de cada control: docs/06 D1.10.
 
 ## Semana 3 · Capa 2: Auth
 
