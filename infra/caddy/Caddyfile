@@ -1,0 +1,31 @@
+{
+	auto_https off
+	admin off
+	persist_config off
+}
+
+:8080 {
+	request_body {
+		max_size 10MB
+	}
+
+	header {
+		X-Content-Type-Options nosniff
+		X-Frame-Options DENY
+		Referrer-Policy strict-origin-when-cross-origin
+		Permissions-Policy "camera=(), microphone=(), geolocation=()"
+		X-Request-ID {http.request.uuid}
+		-Server
+		-Via
+	}
+
+	handle_path /api/core/* {
+		reverse_proxy core:8000 {
+			header_up X-Request-ID {http.request.uuid}
+		}
+	}
+
+	handle {
+		respond "Not found" 404
+	}
+}
