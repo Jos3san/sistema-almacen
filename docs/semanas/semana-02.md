@@ -13,7 +13,12 @@ Detalle y criterios de aceptación de cada tarea: `docs/07-backlog.md`.
 - [x] `docker build` desde la raíz del repo termina sin errores
 - [x] `docker run` + `GET /health` responde `{"status": "ok"}`
 - [x] `docs/codigo/core.md` explica el Dockerfile y los comandos
-- [ ] PR fusionado
+- [x] PR fusionado (PR #2, 07/11)
+
+## Seguridad y principios (docs/06 D1.10 y D1.11) 🧑‍🏫
+- [ ] PR de documentación fusionado
+- [ ] Secret scanning con push protection activo en GitHub
+- [ ] Alertas de Dependabot activas en GitHub
 
 ## T-06 · Docker Compose con PostgreSQL 🧑‍🏫
 - [ ] `infra/compose.yaml` con core + PostgreSQL 18 y volumen
@@ -23,6 +28,7 @@ Detalle y criterios de aceptación de cada tarea: `docs/07-backlog.md`.
 ## T-07 · Gateway con Caddy 🛠️
 - [ ] `/api/core/health` responde a través de Caddy
 - [ ] `/api/core/docs` muestra la documentación
+- [ ] Cabeceras de seguridad presentes y sin cabecera `Server`
 
 ## T-08 · Integración continua 🧑‍🏫
 - [ ] Workflow de GitHub Actions con Ruff y pytest
@@ -34,6 +40,11 @@ Detalle y criterios de aceptación de cada tarea: `docs/07-backlog.md`.
 
 ## T-10 · Migraciones con Alembic 🧑‍🏫
 - [ ] Alembic configurado con dos usuarios de BD (migraciones y aplicación)
+
+## T-20 · Seguridad automatizada en CI (DevSecOps) 🧑‍🏫
+- [ ] `.github/dependabot.yml` (uv, Docker, GitHub Actions)
+- [ ] Ruff `S` y `C90`, pip-audit y Trivy en la CI
+- [ ] CodeQL activo
 
 ## Notas
 _(lo que te costó, lo que aprendiste)_
