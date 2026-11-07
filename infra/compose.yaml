@@ -1,0 +1,53 @@
+# Local environment of the MVP: core + PostgreSQL (T-06, docs/06 D1.2).
+# From the repo root:  docker compose -f infra/compose.yaml up -d --build
+# Values come from infra/.env (copy infra/.env.example; .env is never committed).
+
+name: almacen
+
+services:
+  db:
+    image: postgres:18.6-trixie
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:?set POSTGRES_USER in infra/.env}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in infra/.env}
+      POSTGRES_DB: ${POSTGRES_DB:?set POSTGRES_DB in infra/.env}
+    volumes:
+      # PostgreSQL 18+ keeps its data under /var/lib/postgresql/18/...:
+      # mount the parent folder (not .../data as in older versions).
+      - pgdata:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
+    # No "ports": the database is reachable only inside the Docker network (docs/06 D1.10).
+
+  core:
+    build:
+      context: ..
+      dockerfile: services/core/Dockerfile
+    image: core:dev
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      # Only reachable from this PC. The gateway (Caddy) replaces this in T-07.
+      - "127.0.0.1:8000:8000"
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "import urllib.request; urllib.request.urlopen('http://localhost:8000/health/ready', timeout=2)"
+      interval: 10s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+
+volumes:
+  pgdata:

@@ -33,3 +33,6 @@ docs
 **/*.xlsx
 **/*.csv
 **/*.log
+
+# Infrastructure files are not part of any service image
+infra

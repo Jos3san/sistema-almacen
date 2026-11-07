@@ -167,12 +167,12 @@ sequenceDiagram
 ├── frontend/            Vite + React + TypeScript
 ├── infra/
 │   ├── compose.yaml     servicios del MVP
+│   ├── .env.example     variables sin valores reales (se copia a infra/.env, que no se sube)
 │   ├── compose.dev.yaml ajustes para desarrollo local
 │   ├── caddy/Caddyfile
 │   └── backup/
 ├── docs/                este material (sin datos reales del negocio)
 ├── .github/workflows/   CI
-├── .env.example         variables sin valores reales
 └── CLAUDE.md
 ```
 - Dentro de `core`, cada módulo (catalog, stock, orders, dispatch, reports) solo usa a otro por sus funciones públicas, nunca sus tablas directamente; así se puede separar en un servicio después (ADR-0003).
@@ -182,7 +182,7 @@ sequenceDiagram
 
 ## D1.6 Configuración y secretos
 - Todo lo que cambia por entorno va en variables de entorno (`DATABASE_URL` por servicio con el usuario de la aplicación, `MIGRATION_DATABASE_URL` por servicio con el usuario dueño del esquema (solo lo usa el contenedor de migraciones), `JWT_PRIVATE_KEY_PATH` (solo auth), `JWT_PUBLIC_KEY_PATH` (auth y core), `CORS_ORIGINS` (solo desarrollo)).
-- Valores reales solo en `.env` (fuera de git); en el repo, `.env.example` con valores de ejemplo.
+- Valores reales solo en `infra/.env` (fuera de git), junto a `compose.yaml`, que es donde Compose lo busca; en el repo, `infra/.env.example` con valores de ejemplo.
 - Claves JWT generadas por entorno; nunca se suben. El `.env` y las claves de producción se guardan también fuera del servidor (si se pierden, hay que regenerarlas y todos vuelven a iniciar sesión).
 - Fechas: se guardan como `timestamptz` (UTC) y se muestran en America/Lima.
 - **Inmutabilidad garantizada por la base (RNF-05)**: el usuario de base con el que corre core **no tiene permiso de UPDATE ni DELETE** sobre `movimiento_stock` ni `auditoria` (solo INSERT y SELECT). Las migraciones usan otro usuario, el dueño del esquema, que también define con `ALTER DEFAULT PRIVILEGES` los permisos del usuario de la aplicación sobre las tablas nuevas (si no, cada tabla nueva quedaría sin acceso). Así, aunque el código tenga un error, el kardex y la auditoría no se pueden modificar.

@@ -12,7 +12,7 @@
 - Negocio: varias ubicaciones de stock (tiendas y almacenes), unos cientos de productos, un equipo pequeño (dueño, vendedores, repartidores), decenas de pedidos al día y unas 4 veces más en campaña. **Cifras reales solo en `D:/proyectoLibreria-privado`** (fuera del repo); los docs del repo usan valores genéricos o ficticios.
 - **Plazo: MVP listo ≈ 19/12/2026**; el negocio carga datos la última semana de diciembre; producción en enero 2027. Calendario semanal en docs/04. Ante atrasos se recorta alcance, no calidad.
 - Desarrollo con productos de prueba (los datos reales los carga el negocio).
-- Semana 1 cerrada el 05/11 (salvo B5, tablero): `services/core` con `GET /health`, test y Ruff, fusionado por el PR #1. Flujo de trabajo: rama → PR → merge con rebase (`main` protegida). Semana 2: T-05 (imagen Docker de core) fusionada por el PR #2 el 07/11. Seguridad (OWASP + DevSecOps, T-20) y principios de código en docs/06 D1.10–D1.11. Siguiente: T-06 (Compose + PostgreSQL).
+- Semana 1 cerrada el 05/11 (salvo B5, tablero): `services/core` con `GET /health`, test y Ruff, fusionado por el PR #1. Flujo de trabajo: rama → PR → merge con rebase (`main` protegida). Semana 2: T-05 (imagen Docker de core) fusionada por el PR #2 el 07/11. Seguridad (OWASP + DevSecOps, T-20) y principios de código en docs/06 D1.10–D1.11. T-06 (Compose + PostgreSQL 18 + `/health/ready`) en curso. Siguiente: T-07 (Caddy).
 - Repo público (portafolio): el dueño aceptó publicar el trabajo **sin ninguna información relevante del negocio** (nombre, dominio, direcciones, clientes, proveedores, precios, cifras reales): solo datos ficticios. Lo real va en `.env` o fuera del repo. La entrevista respondida no se sube.
 
 ## Decisiones tomadas

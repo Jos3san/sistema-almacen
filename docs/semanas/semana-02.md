@@ -16,14 +16,16 @@ Detalle y criterios de aceptación de cada tarea: `docs/07-backlog.md`.
 - [x] PR fusionado (PR #2, 07/11)
 
 ## Seguridad y principios (docs/06 D1.10 y D1.11) 🧑‍🏫
-- [ ] PR de documentación fusionado
-- [ ] Secret scanning con push protection activo en GitHub
-- [ ] Alertas de Dependabot activas en GitHub
+- [x] PR de documentación fusionado (PR #3, 07/11)
+- [x] Secret scanning con push protection activo en GitHub (ya venía activo en el repo público)
+- [x] Alertas y actualizaciones de seguridad de Dependabot activas
 
 ## T-06 · Docker Compose con PostgreSQL 🧑‍🏫
-- [ ] `infra/compose.yaml` con core + PostgreSQL 18 y volumen
-- [ ] `.env.example` sin valores reales; `.env` local fuera del repo
-- [ ] `GET /health/ready` comprueba la base
+- [x] `infra/compose.yaml` con core + PostgreSQL 18 y volumen
+- [x] `infra/.env.example` sin valores reales; `infra/.env` local fuera del repo
+- [x] `GET /health/ready` comprueba la base (tests con Testcontainers)
+- [x] Prueba de caída: `stop db` → 503, `start db` → 200 sin reiniciar core
+- [ ] PR fusionado
 
 ## T-07 · Gateway con Caddy 🛠️
 - [ ] `/api/core/health` responde a través de Caddy
