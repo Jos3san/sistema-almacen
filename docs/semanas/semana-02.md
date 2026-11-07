@@ -25,12 +25,15 @@ Detalle y criterios de aceptación de cada tarea: `docs/07-backlog.md`.
 - [x] `infra/.env.example` sin valores reales; `infra/.env` local fuera del repo
 - [x] `GET /health/ready` comprueba la base (tests con Testcontainers)
 - [x] Prueba de caída: `stop db` → 503, `start db` → 200 sin reiniciar core
-- [ ] PR fusionado
+- [x] PR fusionado (PR #4, 07/11)
 
 ## T-07 · Gateway con Caddy 🛠️
-- [ ] `/api/core/health` responde a través de Caddy
-- [ ] `/api/core/docs` muestra la documentación
-- [ ] Cabeceras de seguridad presentes y sin cabecera `Server`
+- [x] `infra/caddy/Caddyfile` escrito por ti y validado con `caddy validate`
+- [x] `/api/core/health/ready` responde a través de Caddy
+- [x] `/api/core/docs` muestra la documentación
+- [x] Cabeceras de seguridad presentes y sin cabecera `Server`
+- [x] core sin puerto propio (`localhost:8000` ya no responde); peticiones de más de 10 MB → 413
+- [ ] PR fusionado
 
 ## T-08 · Integración continua 🧑‍🏫
 - [ ] Workflow de GitHub Actions con Ruff y pytest

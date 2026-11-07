@@ -2,7 +2,7 @@
 
 Explicación en español de cada archivo y función de `services/core`. Se actualiza **en el mismo Pull Request** que cambia el código (convención en CLAUDE.md). En el código, los comentarios y *docstrings* van en inglés.
 
-Última actualización: 07/11/2026 · Semana 2 (T-06).
+Última actualización: 07/11/2026 · Semana 2 (T-07).
 
 ## Qué es `core`
 El servicio principal del sistema: catálogo, stock, pedidos y despachos (docs/06 D1.2, ADR-0003). Por ahora responde si está vivo y si puede hablar con su base de datos; el negocio se agrega desde la semana 4.
@@ -113,7 +113,7 @@ La imagen empaqueta `core` con Python y sus dependencias para que corra igual en
 | `runtime` | Copia `.venv` **sin** cambiar el dueño | El código queda de *root*: `app` puede leerlo y ejecutarlo, pero no modificarlo |
 | `runtime` | `CMD ["uvicorn", "core.main:app", "--host", "0.0.0.0", "--port", "8000"]` | Arranca la API. `0.0.0.0` acepta conexiones desde fuera del contenedor |
 
-Pendiente a propósito: el *healthcheck* va en Compose (T-06) y la configuración detrás de Caddy en T-07.
+El *healthcheck* y la configuración detrás de Caddy no están en la imagen sino en Compose (ver "Cómo se levanta"): la misma imagen sirve para cualquier entorno.
 
 **Comandos (desde la raíz del repo):**
 
@@ -134,23 +134,9 @@ Docker Desktop debe estar abierto (*Engine running*); si no, `docker` responde `
 | `GET /docs` | Documentación interactiva (OpenAPI) | Ninguno | Semana 1 |
 | `GET /health/ready` | `200 {"status": "ok"}` o `503 {"status": "unavailable"}` | Ninguno | Semana 2 |
 
-## Entorno local con Docker Compose (`infra/`)
-`infra/compose.yaml` describe el sistema local completo: hoy `db` (PostgreSQL 18.6) y `core`. Desde la raíz del repo:
+## Cómo se levanta
+core corre dentro del entorno de Docker Compose, detrás del gateway Caddy: se usa en `http://localhost/api/core/...` (por ejemplo `http://localhost/api/core/docs`). Comandos y explicación en [infra.md](infra.md).
 
-| Comando | Qué hace |
-| --- | --- |
-| `cp infra/.env.example infra/.env` | Crea tu archivo de variables (una sola vez). Cambia la contraseña; `.env` **nunca** se sube |
-| `docker compose -f infra/compose.yaml up -d --build` | Construye core y levanta todo en segundo plano |
-| `docker compose -f infra/compose.yaml ps` | Estado de cada servicio; esperar `(healthy)` |
-| `docker compose -f infra/compose.yaml logs core` | Logs de core |
-| `docker compose -f infra/compose.yaml stop db` / `start db` | Apaga o enciende solo la base (prueba de caída) |
-| `docker compose -f infra/compose.yaml down` | Apaga y borra los contenedores; **los datos quedan** en el volumen |
-| `docker compose -f infra/compose.yaml down -v` | Además **borra el volumen con los datos**. Solo en local |
-
-Cómo funciona:
-- `db` guarda sus datos en el volumen `pgdata`, montado en `/var/lib/postgresql`. Desde PostgreSQL 18 es esa carpeta, ya no `.../data` como en versiones anteriores y en muchos tutoriales.
-- `db` tiene *healthcheck* con `pg_isready`, y `core` usa `depends_on: condition: service_healthy`: core no arranca hasta que la base acepta conexiones.
-- `core` tiene su propio *healthcheck* contra `/health/ready`.
-- La base **no** publica puertos: solo core la alcanza, dentro de la red de Docker (docs/06 D1.10). core solo escucha en `127.0.0.1:8000` hasta que llegue Caddy (T-07).
-- `POSTGRES_PASSWORD` solo se aplica **la primera vez** que se crea el volumen. Si cambias la clave en `.env` después, hay que borrar el volumen (`down -v`) o cambiarla dentro de PostgreSQL.
-- Temporal hasta T-10: core se conecta con el usuario que crea la imagen de PostgreSQL, que es superusuario. T-10 lo separa en dueño del esquema y usuario de la aplicación con permisos mínimos.
+Dos variables de entorno que pone Compose y afectan a core:
+- `UVICORN_ROOT_PATH=/api/core`: Caddy quita ese prefijo antes de reenviar; con esto FastAPI sabe que vive bajo `/api/core` y `/docs` arma bien sus enlaces. Sin Compose (con `uv run fastapi dev`) no se usa y la API queda en `http://127.0.0.1:8000`.
+- `FORWARDED_ALLOW_IPS=*`: core confía en la cabecera `X-Forwarded-For` del gateway para conocer la IP real del cliente. Es seguro solo porque core no publica puertos.
