@@ -58,7 +58,7 @@ Herramientas verificadas. Ajustes encontrados antes de la sección B:
 - [x] C2 · Endpoint `GET /health` con FastAPI 0.162 (05/11): responde 200 `{"status": "ok"}`; `/docs` funciona
 - [x] C3 · Primer test con pytest 9.2 (05/11): `tests/test_health.py`, 1 passed; se vio fallar a propósito. Código documentado (docstrings) y guía `docs/codigo/core.md`
 - [x] C4 · Ruff 0.17 sin errores (05/11): reglas E, F, I, B, UP; lint y formato en verde; se vio fallar a propósito (F401 por un import sin usar y un error de formato)
-- [ ] C5 · Todo entra a `main` por un PR
+- [x] C5 · Primer Pull Request #1 fusionado con rebase (05/11): commits `3137540 feat(core)` y `4b9e529 docs`; rama borrada
 
 ## Notas
 _(qué aprendiste, qué falló y cómo lo resolviste)_
