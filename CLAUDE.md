@@ -12,7 +12,7 @@
 - Negocio: varias ubicaciones de stock (tiendas y almacenes), unos cientos de productos, un equipo pequeño (dueño, vendedores, repartidores), decenas de pedidos al día y unas 4 veces más en campaña. **Cifras reales solo en `D:/proyectoLibreria-privado`** (fuera del repo); los docs del repo usan valores genéricos o ficticios.
 - **Plazo: MVP listo ≈ 19/12/2026**; el negocio carga datos la última semana de diciembre; producción en enero 2027. Calendario semanal en docs/04. Ante atrasos se recorta alcance, no calidad.
 - Desarrollo con productos de prueba (los datos reales los carga el negocio).
-- No hay código todavía. Semana 1 en curso: herramientas instaladas (28/10); seguimiento en `docs/semanas/semana-01.md`.
+- Semana 1 cerrada el 05/11 (salvo B5, tablero): `services/core` con `GET /health`, test y Ruff, fusionado por el PR #1. Flujo de trabajo: rama → PR → merge con rebase (`main` protegida). Siguiente: semana 2 (T-05 Docker de core).
 - Repo público (portafolio): el dueño aceptó publicar el trabajo **sin ninguna información relevante del negocio** (nombre, dominio, direcciones, clientes, proveedores, precios, cifras reales): solo datos ficticios. Lo real va en `.env` o fuera del repo. La entrevista respondida no se sube.
 
 ## Decisiones tomadas
