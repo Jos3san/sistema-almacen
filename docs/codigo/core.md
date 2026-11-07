@@ -2,10 +2,10 @@
 
 Explicación en español de cada archivo y función de `services/core`. Se actualiza **en el mismo Pull Request** que cambia el código (convención en CLAUDE.md). En el código, los comentarios y *docstrings* van en inglés.
 
-Última actualización: 07/11/2026 · Semana 2 (T-05).
+Última actualización: 07/11/2026 · Semana 2 (T-06).
 
 ## Qué es `core`
-El servicio principal del sistema: catálogo, stock, pedidos y despachos (docs/06 D1.2, ADR-0003). Por ahora solo responde que está vivo; el negocio se agrega desde la semana 4.
+El servicio principal del sistema: catálogo, stock, pedidos y despachos (docs/06 D1.2, ADR-0003). Por ahora responde si está vivo y si puede hablar con su base de datos; el negocio se agrega desde la semana 4.
 
 ## Estructura
 ```
@@ -18,9 +18,12 @@ services/core/
 ├── src/
 │   └── core/           el paquete de Python "core" (el código de la aplicación)
 │       ├── __init__.py marca la carpeta como paquete
+│       ├── config.py   lee la configuración de las variables de entorno
+│       ├── db.py       conexión a PostgreSQL (pool de conexiones)
 │       └── main.py     crea la aplicación FastAPI y sus rutas
 └── tests/
-    └── test_health.py  pruebas automáticas de /health
+    ├── test_health.py        pruebas de /health
+    └── test_health_ready.py  pruebas de /health/ready contra un PostgreSQL real
 ```
 Carpetas que se generan solas y **no** se suben a Git: `.venv/` (librerías instaladas), `__pycache__/` (caché de Python), `.pytest_cache/` (caché de pytest).
 
@@ -30,8 +33,8 @@ Carpetas que se generan solas y **no** se suben a Git: `.venv/` (librerías inst
 | Sección | Qué dice |
 | --- | --- |
 | `[project]` | Nombre `core`, versión `0.1.0`, requiere Python ≥ 3.13 |
-| `dependencies` | Lo que necesita **en producción**: `fastapi` y el servidor `uvicorn[standard]` |
-| `[dependency-groups] dev` | Lo que solo se usa **al desarrollar**: `fastapi[standard]` (comando `fastapi dev` y cliente de tests), `pytest` y `ruff`. La imagen de producción no los instala |
+| `dependencies` | Lo que necesita **en producción**: `fastapi`, el servidor `uvicorn[standard]`, `sqlalchemy` (hablar con la base desde Python), `psycopg[binary]` (el *driver* que conecta con PostgreSQL) y `pydantic-settings` (leer la configuración) |
+| `[dependency-groups] dev` | Lo que solo se usa **al desarrollar**: `fastapi[standard]` (comando `fastapi dev` y cliente de tests), `pytest`, `ruff` y `testcontainers[postgres]` (PostgreSQL desechable para los tests). La imagen de producción no los instala |
 | `[build-system]` | Cómo uv empaqueta el código como paquete instalable (`uv_build`) |
 | `[tool.ruff]` | Ruff revisa pensando en Python 3.13, con líneas de hasta 100 caracteres |
 | `[tool.ruff.lint] select` | Familias de reglas activas: **E** estilo, **F** errores reales (imports sin usar, variables no definidas), **I** orden de imports, **B** errores típicos, **UP** sintaxis moderna |
@@ -40,9 +43,24 @@ Carpetas que se generan solas y **no** se suben a Git: `.venv/` (librerías inst
 | Elemento | Qué es | Para qué |
 | --- | --- | --- |
 | `app = FastAPI(title="core")` | La aplicación | Objeto central al que se le agregan todas las rutas. El título aparece en `/docs` |
-| `health()` | Endpoint `GET /health` | Responde `{"status": "ok"}` con código 200 si el proceso está vivo. Lo usarán Docker, el gateway y el monitor externo. **No** revisa la base de datos: eso será `GET /health/ready` (T-06) |
+| `health()` | Endpoint `GET /health` | Responde `{"status": "ok"}` con código 200 si el proceso está vivo. **No** revisa la base de datos |
+| `health_ready()` | Endpoint `GET /health/ready` | Hace `SELECT 1` en la base. 200 `{"status": "ok"}` si responde; si no, **503** `{"status": "unavailable"}` sin detalles internos (OWASP A10, docs/06 D1.10), y la causa va al log. Lo usan el healthcheck de Compose y el monitor externo |
+| `engine: Annotated[Engine, Depends(get_engine)]` | Inyección de dependencias | FastAPI llama a `get_engine()` y le pasa el resultado al endpoint. En los tests se reemplaza por otra base (`app.dependency_overrides`) sin tocar el código |
+
+¿Por qué dos *health*? `/health` dice "el proceso vive"; `/health/ready` dice "puedo trabajar". Si la base se cae, core sigue vivo pero no listo: así el monitor distingue "reiniciar core" de "revisar la base".
 
 La *docstring* de cada endpoint (el texto entre `"""` debajo del `def`) aparece como descripción en la documentación automática `/docs`.
+
+## `src/core/config.py` y `src/core/db.py`
+| Elemento | Qué es | Para qué |
+| --- | --- | --- |
+| `Settings` | Clase de `pydantic-settings` | Cada campo se lee de la variable de entorno con el mismo nombre en mayúsculas: `database_url` ← `DATABASE_URL`. Si falta, falla con un error que la nombra. Así no hay contraseñas en el código (docs/06 D1.6) |
+| `get_settings()` | Función con `@lru_cache` | Lee la configuración una sola vez y la reutiliza |
+| `get_engine()` | Función con `@lru_cache` | Crea **una vez** el *pool* de conexiones de SQLAlchemy. Abrir una conexión cuesta, el pool las reutiliza |
+| `pool_pre_ping=True` | Opción del pool | Antes de usar una conexión, comprueba que sigue viva. Por eso core se recupera solo cuando la base vuelve |
+| `connect_timeout=3` | Opción del driver | Si la base no responde en 3 s, se rinde en vez de dejar la petición colgada |
+
+La URL de conexión tiene la forma `postgresql+psycopg://usuario:clave@host:5432/base`: `+psycopg` indica a SQLAlchemy qué driver usar. Dentro de Compose, el host es `db`, el nombre del servicio.
 
 ## `tests/test_health.py`
 | Elemento | Qué es | Para qué |
@@ -51,6 +69,16 @@ La *docstring* de cada endpoint (el texto entre `"""` debajo del `def`) aparece 
 | `test_health_returns_ok()` | Test | Comprueba que `GET /health` responde 200 y `{"status": "ok"}`. Si alguien rompe `/health`, falla |
 
 Convenciones de pytest: la carpeta se llama `tests/`, los archivos empiezan con `test_` y las funciones también.
+
+## `tests/test_health_ready.py`
+| Elemento | Qué es | Para qué |
+| --- | --- | --- |
+| `postgres_url` | *Fixture* de pytest (`scope="module"`) | Levanta un PostgreSQL **real y desechable** con Testcontainers, de la misma versión que `infra/compose.yaml`, y lo borra al terminar. Se crea una vez para todos los tests del archivo |
+| `client_for` | *Fixture* | Devuelve una función que crea un cliente de prueba conectado a la base que le digas. Al terminar el test limpia el reemplazo (`dependency_overrides.clear()`) |
+| `test_ready_ok_when_database_reachable` | Test | Base real → 200 `{"status": "ok"}` |
+| `test_ready_503_when_database_down` | Test | Base inexistente (puerto 1) → 503 y el cuerpo **no** revela detalles |
+
+Una *fixture* es una preparación que pytest le entrega al test con solo nombrarla como parámetro. Estos tests necesitan **Docker Desktop encendido**.
 
 ## Comandos (desde `services/core`)
 | Comando | Qué hace |
@@ -104,3 +132,25 @@ Docker Desktop debe estar abierto (*Engine running*); si no, `docker` responde `
 | --- | --- | --- | --- |
 | `GET /health` | `200 {"status": "ok"}` | Ninguno | Semana 1 |
 | `GET /docs` | Documentación interactiva (OpenAPI) | Ninguno | Semana 1 |
+| `GET /health/ready` | `200 {"status": "ok"}` o `503 {"status": "unavailable"}` | Ninguno | Semana 2 |
+
+## Entorno local con Docker Compose (`infra/`)
+`infra/compose.yaml` describe el sistema local completo: hoy `db` (PostgreSQL 18.6) y `core`. Desde la raíz del repo:
+
+| Comando | Qué hace |
+| --- | --- |
+| `cp infra/.env.example infra/.env` | Crea tu archivo de variables (una sola vez). Cambia la contraseña; `.env` **nunca** se sube |
+| `docker compose -f infra/compose.yaml up -d --build` | Construye core y levanta todo en segundo plano |
+| `docker compose -f infra/compose.yaml ps` | Estado de cada servicio; esperar `(healthy)` |
+| `docker compose -f infra/compose.yaml logs core` | Logs de core |
+| `docker compose -f infra/compose.yaml stop db` / `start db` | Apaga o enciende solo la base (prueba de caída) |
+| `docker compose -f infra/compose.yaml down` | Apaga y borra los contenedores; **los datos quedan** en el volumen |
+| `docker compose -f infra/compose.yaml down -v` | Además **borra el volumen con los datos**. Solo en local |
+
+Cómo funciona:
+- `db` guarda sus datos en el volumen `pgdata`, montado en `/var/lib/postgresql`. Desde PostgreSQL 18 es esa carpeta, ya no `.../data` como en versiones anteriores y en muchos tutoriales.
+- `db` tiene *healthcheck* con `pg_isready`, y `core` usa `depends_on: condition: service_healthy`: core no arranca hasta que la base acepta conexiones.
+- `core` tiene su propio *healthcheck* contra `/health/ready`.
+- La base **no** publica puertos: solo core la alcanza, dentro de la red de Docker (docs/06 D1.10). core solo escucha en `127.0.0.1:8000` hasta que llegue Caddy (T-07).
+- `POSTGRES_PASSWORD` solo se aplica **la primera vez** que se crea el volumen. Si cambias la clave en `.env` después, hay que borrar el volumen (`down -v`) o cambiarla dentro de PostgreSQL.
+- Temporal hasta T-10: core se conecta con el usuario que crea la imagen de PostgreSQL, que es superusuario. T-10 lo separa en dueño del esquema y usuario de la aplicación con permisos mínimos.
