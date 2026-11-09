@@ -12,8 +12,8 @@ Parte D3 del diseño (docs/06). Cada historia será un **Issue** en GitHub y una
 | Semana | Capa | Historias |
 | --- | --- | --- |
 | 1 | 0. Preparación | T-01 a T-04 |
-| 2 | 1. Base técnica | T-05 a T-10, T-20 |
-| 3 | 2. Auth | HU-01 a HU-06, T-11 a T-13 |
+| 2 | 1. Base técnica | T-05 a T-10 |
+| 3 | 2. Auth | HU-01 a HU-06, T-11 a T-13, T-20 y tablero de T-04 |
 | 4 | 3. Catálogo | HU-07 a HU-13 |
 | 5 | 4. Stock | HU-14 a HU-20, T-14 |
 | 6 | 5. Pedidos | HU-21 a HU-27 |
@@ -40,7 +40,7 @@ Parte D3 del diseño (docs/06). Cada historia será un **Issue** en GitHub y una
 
 ### T-04 Primer Pull Request · S
 - T-03 entra a `main` por un PR con mensaje en Conventional Commits.
-- Tablero de GitHub Projects creado con las historias de la semana 2.
+- Tablero de GitHub Projects con las historias de la semana. _Movido al inicio de la semana 3 (07/11): con las historias de usuario de auth es cuando aporta; en la semana 2 el seguimiento lo llevó `docs/semanas/semana-02.md`._
 
 ## Semana 2 · Capa 1: Base técnica
 
@@ -53,7 +53,7 @@ Parte D3 del diseño (docs/06). Cada historia será un **Issue** en GitHub y una
 - `infra/compose.yaml` levanta core y PostgreSQL 18 con volumen persistente.
 - PostgreSQL con `healthcheck`; core arranca solo cuando la base está *healthy*.
 - core expone `GET /health/ready`, que responde 200 solo si puede consultar su base.
-- Credenciales tomadas de `.env`; `.env.example` en el repo sin valores reales.
+- Credenciales tomadas de `infra/.env`; `infra/.env.example` en el repo sin valores reales.
 
 ### T-07 Gateway con Caddy · M
 - `/api/core/*` llega a core sin el prefijo (`root_path` configurado: `/api/core/docs` muestra la documentación).
@@ -74,13 +74,6 @@ Parte D3 del diseño (docs/06). Cada historia será un **Issue** en GitHub y una
 ### T-10 Primera migración con Alembic · S
 - Alembic configurado en core; una migración inicial vacía se aplica con un contenedor de un solo uso antes de levantar core (docs/06 D1.5).
 - Dos usuarios de base: el dueño del esquema (`MIGRATION_DATABASE_URL`, solo para migraciones) y el de la aplicación con permisos mínimos (`DATABASE_URL`), con `ALTER DEFAULT PRIVILEGES` para las tablas futuras (docs/06 D1.6).
-
-### T-20 Seguridad automatizada en el pipeline (DevSecOps) · M
-- Secret scanning con push protection y alertas de Dependabot activos en GitHub.
-- `.github/dependabot.yml` revisa cada semana las dependencias de uv, las imágenes Docker y las acciones de GitHub.
-- La CI corre Ruff con las reglas `S` (seguridad; en `tests/` se permite `assert`, regla `S101`) y `C90` (complejidad, máximo 10), pip-audit sobre las dependencias y Trivy sobre la imagen de core; falla con vulnerabilidades altas o críticas que tengan arreglo.
-- CodeQL activo para Python.
-- Detalle y motivo de cada control: docs/06 D1.10.
 
 ## Semana 3 · Capa 2: Auth
 
@@ -120,6 +113,14 @@ Parte D3 del diseño (docs/06). Cada historia será un **Issue** en GitHub y una
 *Como vendedor, quiero una pantalla de login que funcione bien en el celular, para entrar desde la calle.*
 - Formulario usable en 360 px de ancho; muestra los errores de HU-01 en español.
 - Tras entrar, muestra el nombre del usuario y un botón de cerrar sesión.
+
+### T-20 Seguridad automatizada en el pipeline (DevSecOps) · M
+_Movida desde la semana 2 el 07/11: necesita la CI (T-08) funcionando; se recorta alcance de la semana 2, no calidad._
+- Secret scanning con push protection y alertas de Dependabot activos en GitHub.
+- `.github/dependabot.yml` revisa cada semana las dependencias de uv, las imágenes Docker y las acciones de GitHub.
+- La CI corre Ruff con las reglas `S` (seguridad; en `tests/` se permite `assert`, regla `S101`) y `C90` (complejidad, máximo 10), pip-audit sobre las dependencias y Trivy sobre la imagen de core; falla con vulnerabilidades altas o críticas que tengan arreglo.
+- CodeQL activo para Python.
+- Detalle y motivo de cada control: docs/06 D1.10.
 
 ### T-11 Validación de JWT compartida · M · ADR-0007
 - `libs/security` valida firma RS256, `iss`, `aud` y `exp` con la clave pública leída de archivo, y verifica permisos.

@@ -66,7 +66,7 @@ Esto permite generar el changelog y decidir la versión automáticamente.
 ### Entornos
 | Entorno | Para qué | Cómo se despliega |
 | --- | --- | --- |
-| local | Desarrollo | `docker compose up` |
+| local | Desarrollo | `docker compose -f infra/compose.yaml up -d` (docs/codigo/infra.md) |
 | ci | Pruebas automáticas en cada PR | GitHub Actions (servicios efímeros) |
 | staging | Probar antes de producción, con datos de prueba | Automático al fusionar en `main` |
 | production | Uso real de la librería | Manual (aprobación) a partir de un tag `vX.Y.Z` |
@@ -103,4 +103,10 @@ Cada capa del roadmap se usa para practicar un concepto concreto de DevOps o mic
 - Retrospectiva corta al cerrar cada capa: qué funcionó, qué mejorar, qué ADR cambia. Se anota al final de este documento.
 
 ## 7. Retrospectivas
-_(se completa al cerrar cada capa)_
+Al cerrar cada capa, unas líneas que responden:
+1. ¿Qué funcionó bien y conviene repetir?
+2. ¿Qué costó más de lo esperado y por qué?
+3. ¿Qué cambio concreto hago en la próxima capa?
+
+### Capa 0 · Preparación (cerrada el 05/11)
+_(pendiente: la escribe Jossan)_

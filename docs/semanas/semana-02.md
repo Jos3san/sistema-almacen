@@ -33,12 +33,14 @@ Detalle y criterios de aceptación de cada tarea: `docs/07-backlog.md`.
 - [x] `/api/core/docs` muestra la documentación
 - [x] Cabeceras de seguridad presentes y sin cabecera `Server`
 - [x] core sin puerto propio (`localhost:8000` ya no responde); peticiones de más de 10 MB → 413
-- [ ] PR fusionado
+- [x] PR fusionado (PR #5, 07/11)
 
 ## T-08 · Integración continua 🧑‍🏫
-- [ ] Workflow de GitHub Actions con Ruff y pytest
+- [ ] Workflow de GitHub Actions: Ruff, pytest (con PostgreSQL real) y construcción de la imagen
+- [ ] Extensión de VS Code "GitHub Actions" (`github.vscode-github-actions`)
+- [ ] El ruleset de `main` exige la CI en verde y solo permite fusionar con rebase
 - [ ] Laboratorio: un PR que falla a propósito y GitHub no deja fusionar
-- [ ] El ruleset de `main` exige la CI en verde
+- [ ] README de la raíz con el badge de la CI
 
 ## T-09 · Logs estructurados 🛠️
 - [ ] Logs JSON con `X-Request-ID`, sin tokens ni cuerpos
@@ -46,10 +48,11 @@ Detalle y criterios de aceptación de cada tarea: `docs/07-backlog.md`.
 ## T-10 · Migraciones con Alembic 🧑‍🏫
 - [ ] Alembic configurado con dos usuarios de BD (migraciones y aplicación)
 
-## T-20 · Seguridad automatizada en CI (DevSecOps) 🧑‍🏫
-- [ ] `.github/dependabot.yml` (uv, Docker, GitHub Actions)
-- [ ] Ruff `S` y `C90`, pip-audit y Trivy en la CI
-- [ ] CodeQL activo
+## T-20 · Seguridad automatizada en CI (DevSecOps)
+Movida al inicio de la semana 3 (07/11): necesita la CI funcionando. Ver docs/07.
 
 ## Notas
-_(lo que te costó, lo que aprendiste)_
+Tu retrospectiva (también va resumida en docs/00, sección 7). Unas líneas por pregunta:
+1. ¿Qué funcionó bien y conviene repetir?
+2. ¿Qué costó más de lo esperado y por qué?
+3. ¿Qué cambio concreto hago en la próxima capa?

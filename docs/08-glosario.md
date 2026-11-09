@@ -66,6 +66,11 @@ Términos y siglas usados en la documentación del proyecto. Ordenados por tema.
 | Microservicio | Aplicación pequeña e independiente con su propia base de datos (auth, core) |
 | Monorepo | Un solo repositorio con todos los servicios y el frontend |
 | Gateway | Puerta de entrada única del sistema (Caddy) |
+| Reverse proxy | Servidor que recibe las peticiones y las reenvía al servicio que corresponde (Caddy con `reverse_proxy`) |
+| `X-Request-ID` | Identificador único que el gateway pone a cada petición, para encontrarla en los logs |
+| Pool de conexiones | Conexiones a la base que se abren una vez y se reutilizan (SQLAlchemy), porque abrir una cuesta |
+| Fixture | Preparación que pytest le entrega a un test con solo nombrarla como parámetro (ej. una base de prueba) |
+| Testcontainers | Librería que levanta contenedores reales y desechables (PostgreSQL) mientras corren los tests |
 | Outbox | Patrón para publicar eventos sin perderlos (ADR-0004, después del MVP) |
 | Idempotencia | Repetir una operación da el mismo resultado; evita pedidos duplicados (`Idempotency-Key`) |
 | KISS | *Keep It Simple*: elegir la solución más simple que funcione (docs/06 D1.11) |
@@ -141,6 +146,10 @@ Términos y siglas usados en la documentación del proyecto. Ordenados por tema.
 | GHCR | *GitHub Container Registry*: donde se guardan las imágenes Docker |
 | Imagen / contenedor | Paquete inmutable con el servicio y todo lo que necesita / esa imagen en ejecución |
 | Multi-stage | Dockerfile en etapas: una construye, la final solo lleva lo necesario para ejecutar |
+| Volumen | Almacenamiento de Docker que sobrevive aunque se borre el contenedor (datos de PostgreSQL) |
+| tmpfs | Carpeta temporal en memoria; se pierde al apagar el contenedor (Caddy con disco de solo lectura) |
+| Workflow / job / runner | Archivo de GitHub Actions (`.github/workflows/`) / grupo de pasos que corre en una máquina / la máquina limpia que GitHub presta para correrlo |
+| SHA (de commit) | Identificador único e inmutable de un commit (ej. `3d3c42e…`); las acciones de la CI se fijan por SHA |
 | Dependabot | Servicio de GitHub que avisa de dependencias vulnerables y abre PRs para actualizarlas |
 | pip-audit / Trivy / CodeQL | Escáneres: dependencias Python / imágenes Docker / código fuente |
 | SemVer | Versionado semántico `MAYOR.MENOR.PARCHE` (ej. v1.2.3) |
