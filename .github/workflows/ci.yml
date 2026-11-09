@@ -1,0 +1,66 @@
+# Continuous integration (T-08, docs/00 and docs/06 D1.10).
+# Runs on every pull request and on every push to main.
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+# Least privilege: the workflow can only read the repository.
+permissions:
+  contents: read
+
+# A new push to the same PR cancels its run in progress. Runs on main are never
+# cancelled: every merged commit must be verified.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  core-tests:
+    name: core / lint and tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: services/core
+    steps:
+      # Actions are pinned to a commit SHA (immutable); the comment shows the version.
+      - name: Check out the code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          version: "0.13.6"
+          enable-cache: true
+
+      - name: Install dependencies (exactly as in uv.lock)
+        run: uv sync --locked
+
+      - name: Check formatting (Ruff)
+        run: uv run ruff format --check .
+
+      - name: Lint (Ruff)
+        run: uv run ruff check .
+
+      # Testcontainers starts a real PostgreSQL with the runner's Docker.
+      - name: Run tests (pytest)
+        run: uv run pytest -v
+
+  core-image:
+    name: core / Docker image
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Check out the code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # Same command as locally: context = repo root (docs/06 D1.5). Nothing is pushed.
+      - name: Build the image
+        run: docker build -f services/core/Dockerfile -t core:ci .
