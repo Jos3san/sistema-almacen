@@ -1,4 +1,5 @@
-# Local environment of the MVP: gateway (Caddy) + core + PostgreSQL (T-06, T-07, docs/06 D1.2).
+# Local environment of the MVP: gateway (Caddy) + core + PostgreSQL (T-06, T-07, T-10, docs/06 D1.2).
+# Start order: db (healthy) -> migrate (runs once and exits) -> core (healthy) -> gateway.
 # Open http://localhost/api/core/docs once everything is healthy.
 # From the repo root:  docker compose -f infra/compose.yaml up -d --build
 # Values come from infra/.env (copy infra/.env.example; .env is never committed).
@@ -10,20 +11,39 @@ services:
     image: postgres:18.6-trixie
     restart: unless-stopped
     environment:
+      # Administrator: only creates the databases and roles on the first start.
       POSTGRES_USER: ${POSTGRES_USER:?set POSTGRES_USER in infra/.env}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in infra/.env}
-      POSTGRES_DB: ${POSTGRES_DB:?set POSTGRES_DB in infra/.env}
+      # Read by postgres/init/10-core.sh to create core_owner and core_app.
+      CORE_OWNER_PASSWORD: ${CORE_OWNER_PASSWORD:?set CORE_OWNER_PASSWORD in infra/.env}
+      CORE_APP_PASSWORD: ${CORE_APP_PASSWORD:?set CORE_APP_PASSWORD in infra/.env}
     volumes:
       # PostgreSQL 18+ keeps its data under /var/lib/postgresql/18/...:
       # mount the parent folder (not .../data as in older versions).
       - pgdata:/var/lib/postgresql
+      # Scripts that run only once, when the data volume is empty.
+      - ./postgres/init:/docker-entrypoint-initdb.d:ro
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d postgres"]
       interval: 5s
       timeout: 3s
       retries: 10
       start_period: 10s
     # No "ports": the database is reachable only inside the Docker network (docs/06 D1.10).
+
+  # One-shot container: applies pending migrations as the schema owner and exits.
+  migrate:
+    build:
+      context: ..
+      dockerfile: services/core/Dockerfile
+    image: core:dev
+    command: ["alembic", "upgrade", "head"]
+    restart: "no"
+    environment:
+      MIGRATION_DATABASE_URL: postgresql+psycopg://core_owner:${CORE_OWNER_PASSWORD}@db:5432/core_db
+    depends_on:
+      db:
+        condition: service_healthy
 
   core:
     build:
@@ -32,7 +52,8 @@ services:
     image: core:dev
     restart: unless-stopped
     environment:
-      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+      # Application user: reads and writes rows, cannot change tables (docs/06 D1.6).
+      DATABASE_URL: postgresql+psycopg://core_app:${CORE_APP_PASSWORD}@db:5432/core_db
       # The gateway removes /api/core before forwarding; root_path makes /docs
       # and its links work behind that prefix (docs/06 D1.2).
       UVICORN_ROOT_PATH: /api/core
@@ -42,6 +63,8 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
     # No "ports": core is reachable only through the gateway.
     healthcheck:
       test:

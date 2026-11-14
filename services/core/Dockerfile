@@ -35,6 +35,11 @@ RUN groupadd --system --gid 10001 app \
 COPY --from=builder /app/.venv /app/.venv
 WORKDIR /app
 
+# Migrations travel in the same image; the one-shot "migrate" container runs them
+# with "alembic upgrade head" before core starts (docs/06 D1.5).
+COPY services/core/alembic.ini ./
+COPY services/core/migrations ./migrations
+
 # Use the virtualenv's Python; print logs immediately (no buffering).
 ENV PATH="/app/.venv/bin:$PATH" \
     PYTHONUNBUFFERED=1
