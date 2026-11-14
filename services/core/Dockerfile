@@ -27,6 +27,14 @@ RUN uv sync --locked --no-dev --no-editable
 # ---- Stage 2: runtime — only Python + the ready virtualenv ----
 FROM python:3.13.15-slim-trixie AS runtime
 
+# Security fixes for the operating system packages (the base image can lag behind),
+# and remove pip: the service never installs anything at runtime, and the
+# libraries vendored inside pip carry their own vulnerabilities (Trivy, T-20).
+RUN apt-get update \
+    && apt-get upgrade -y --no-install-recommends \
+    && rm -rf /var/lib/apt/lists/* \
+    && python -m pip uninstall -y pip
+
 # Unprivileged user: if the app is compromised, it is not root.
 RUN groupadd --system --gid 10001 app \
     && useradd --system --uid 10001 --gid app --no-create-home app
