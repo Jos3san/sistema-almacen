@@ -2,16 +2,19 @@
 
 Explicación en español de cómo se levanta el sistema con Docker Compose, del gateway Caddy y de la integración continua. Se actualiza **en el mismo Pull Request** que cambia `infra/` o `.github/`.
 
-Última actualización: 09/11/2026 · Semana 2 (T-06, T-07 y T-08).
+Última actualización: 14/11/2026 · Semana 2 (T-06 a T-10).
 
 ## Estructura
 ```
 infra/
-├── compose.yaml      el plano del sistema local: gateway, core y db
+├── compose.yaml      el plano del sistema local: gateway, core, migrate y db
 ├── .env.example      plantilla de variables sin valores reales (sí se sube)
 ├── .env              tus valores reales (NO se sube: lo bloquea .gitignore)
-└── caddy/
-    └── Caddyfile     configuración del gateway
+├── caddy/
+│   └── Caddyfile     configuración del gateway
+└── postgres/
+    └── init/
+        └── 10-core.sh  crea core_db y sus dos usuarios (solo con el volumen vacío)
 ```
 
 ## Cómo viaja una petición
@@ -28,11 +31,26 @@ Solo el gateway publica un puerto. core y db viven en la red interna de Docker y
 ## Servicios de `compose.yaml`
 | Servicio | Imagen | Puertos | Detalles |
 | --- | --- | --- | --- |
-| `db` | `postgres:18.6-trixie` | Ninguno | Datos en el volumen `pgdata` montado en `/var/lib/postgresql` (desde PostgreSQL 18 es esa carpeta, ya no `.../data`). *Healthcheck* con `pg_isready` |
-| `core` | `core:dev` (se construye desde `services/core/Dockerfile`) | Ninguno | Arranca cuando `db` está *healthy*. *Healthcheck* contra `/health/ready`. Variables: `DATABASE_URL`, `UVICORN_ROOT_PATH`, `FORWARDED_ALLOW_IPS` (ver docs/codigo/core.md) |
+| `db` | `postgres:18.6-trixie` | Ninguno | Datos en el volumen `pgdata` montado en `/var/lib/postgresql` (desde PostgreSQL 18 es esa carpeta, ya no `.../data`). Monta `postgres/init` en `/docker-entrypoint-initdb.d`. *Healthcheck* con `pg_isready` |
+| `migrate` | `core:dev` | Ninguno | **Contenedor de un solo uso**: corre `alembic upgrade head` como `core_owner` y termina. En `ps -a` aparece `Exited (0)`, que significa que terminó bien. Arranca cuando `db` está *healthy* |
+| `core` | `core:dev` (se construye desde `services/core/Dockerfile`) | Ninguno | Arranca cuando `db` está *healthy* y `migrate` terminó bien (`service_completed_successfully`): si una migración falla, core no arranca. Se conecta como `core_app`. *Healthcheck* contra `/health/ready`. Variables: `DATABASE_URL`, `UVICORN_ROOT_PATH`, `FORWARDED_ALLOW_IPS` (ver docs/codigo/core.md) |
 | `gateway` | `caddy:2.11.9-alpine` | `127.0.0.1:80` → `8080` | Arranca cuando `core` está *healthy*. Usuario sin privilegios (65534), disco de solo lectura y carpetas temporales (`tmpfs`) para `/data` y `/config`. El Caddyfile se monta como solo lectura |
 
 `127.0.0.1` delante del puerto significa que solo se puede entrar desde tu propia PC, no desde otra máquina de tu red.
+
+Orden de arranque: `db` (*healthy*) → `migrate` (termina) → `core` (*healthy*) → `gateway`.
+
+## Usuarios de la base (`postgres/init/10-core.sh`, docs/06 D1.6)
+| Usuario | Lo usa | Puede | Variable de `.env` |
+| --- | --- | --- | --- |
+| `postgres` (administrador) | Solo el primer arranque, para crear bases y usuarios; emergencias | Todo | `POSTGRES_USER`, `POSTGRES_PASSWORD` |
+| `core_owner` | El contenedor `migrate` (`MIGRATION_DATABASE_URL`) | Es dueño de `core_db`: crea y cambia tablas | `CORE_OWNER_PASSWORD` |
+| `core_app` | El servicio core (`DATABASE_URL`) | Leer y escribir filas. **No** puede crear, alterar ni borrar tablas | `CORE_APP_PASSWORD` |
+
+- `REVOKE ALL ON DATABASE core_db FROM PUBLIC`: solo estos usuarios pueden conectarse a `core_db`; el futuro usuario de auth no podrá.
+- `ALTER DEFAULT PRIVILEGES`: cada tabla que `core_owner` cree en una migración queda **automáticamente** disponible para `core_app` (leer, insertar, actualizar, borrar filas). Las tablas que deben ser solo de inserción (kardex, auditoría) le quitarán UPDATE y DELETE a `core_app` en su propia migración (RNF-05).
+- El script usa variables de `psql` (`:'owner_password'`) para no escribir las claves en el código.
+- Lo prueban 3 tests de `services/core/tests/test_migrations.py`, que levantan PostgreSQL con **este mismo script**.
 
 ## `caddy/Caddyfile`
 | Bloque | Qué hace | Por qué |
@@ -51,10 +69,10 @@ Pendiente: HSTS se activa con HTTPS real (T-14) y CSP con el frontend (T-13), co
 ## Comandos (desde la raíz del repo)
 | Comando | Qué hace |
 | --- | --- |
-| `cp infra/.env.example infra/.env` | Crea tu archivo de variables (una sola vez). Cambia la contraseña; `.env` **nunca** se sube |
+| `cp infra/.env.example infra/.env` | Crea tu archivo de variables (una sola vez). Cambia las 3 claves; `.env` **nunca** se sube |
 | `docker compose -f infra/compose.yaml up -d --build` | Construye core y levanta todo en segundo plano (`--build` solo hace falta si cambió el código de core) |
-| `docker compose -f infra/compose.yaml ps` | Estado de cada servicio; esperar `(healthy)` |
-| `docker compose -f infra/compose.yaml logs core` | Logs de un servicio (`core`, `db` o `gateway`); los de core van en JSON |
+| `docker compose -f infra/compose.yaml ps -a` | Estado de cada servicio, incluidos los que ya terminaron (`migrate`); esperar `(healthy)` |
+| `docker compose -f infra/compose.yaml logs core` | Logs de un servicio (`core`, `migrate`, `db` o `gateway`); los de core y migrate van en JSON |
 | `docker compose -f infra/compose.yaml stop db` / `start db` | Apaga o enciende un servicio (prueba de caída) |
 | `docker compose -f infra/compose.yaml down` | Apaga y borra los contenedores; **los datos quedan** en el volumen |
 | `docker compose -f infra/compose.yaml down -v` | Además **borra el volumen con los datos**. Solo en local, nunca en producción |
@@ -85,6 +103,6 @@ El ruleset `proteger-main` exige los dos jobs en verde y solo permite fusionar c
 **Cómo leer un fallo:** en el PR, **Details** → el paso en rojo. Busca qué falló (`FAILED tests/...`), por qué (`AssertionError: ...`) y dónde (`archivo:línea`).
 
 ## Trampas aprendidas
-- `POSTGRES_PASSWORD` solo se aplica **la primera vez** que se crea el volumen. Para cambiarla en local: editar `.env` y `down -v` + `up -d`. En producción se **rota** sin borrar nada: `ALTER USER … PASSWORD` dentro de PostgreSQL y después el `.env`.
-- La contraseña va dentro de una URL (`DATABASE_URL`): solo letras y números, porque `@ : / #` la romperían.
-- Temporal hasta T-10: core se conecta con el superusuario que crea la imagen de PostgreSQL. T-10 lo separa en dueño del esquema y usuario de la aplicación con permisos mínimos.
+- Las claves de la base y los scripts de `postgres/init` solo se aplican **la primera vez** que se crea el volumen. Para cambiarlas en local: editar `.env` y `down -v` + `up -d`. En producción se **rotan** sin borrar nada: `ALTER USER … PASSWORD` dentro de PostgreSQL y después el `.env`.
+- Las claves van dentro de URLs (`DATABASE_URL`, `MIGRATION_DATABASE_URL`): solo letras y números, porque `@ : / #` las romperían.
+- Si falta una variable en `infra/.env`, Compose se detiene **antes de hacer nada** con `required variable ... is missing a value` (sintaxis `${VAR:?mensaje}` de `compose.yaml`). Pasó al agregar las claves de T-10: el `.env` local tenía las variables antiguas.
