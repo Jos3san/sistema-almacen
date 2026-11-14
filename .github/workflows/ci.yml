@@ -51,6 +51,12 @@ jobs:
       - name: Run tests (pytest)
         run: uv run pytest -v
 
+      # Known vulnerabilities (CVE) in the exact versions of uv.lock (docs/06 D1.10).
+      - name: Audit dependencies (pip-audit)
+        run: |
+          uv export --frozen --format requirements-txt --no-emit-project -o "$RUNNER_TEMP/requirements.txt"
+          uvx pip-audit@2.10.1 -r "$RUNNER_TEMP/requirements.txt" --disable-pip
+
   core-image:
     name: core / Docker image
     runs-on: ubuntu-24.04
@@ -64,3 +70,11 @@ jobs:
       # Same command as locally: context = repo root (docs/06 D1.5). Nothing is pushed.
       - name: Build the image
         run: docker build -f services/core/Dockerfile -t core:ci .
+
+      # Fails on HIGH or CRITICAL vulnerabilities that already have a fix
+      # (operating system and Python packages inside the image).
+      - name: Scan the image (Trivy)
+        run: >-
+          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock
+          aquasec/trivy:0.76.2 image --quiet --severity HIGH,CRITICAL
+          --ignore-unfixed --exit-code 1 core:ci

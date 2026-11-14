@@ -14,17 +14,15 @@ from sqlalchemy import create_engine, inspect, text
 from sqlalchemy.exc import ProgrammingError
 from testcontainers.community.postgres import PostgresContainer
 
-# Same image as infra/compose.yaml.
-POSTGRES_IMAGE = "postgres:18.6-trixie"
 SERVICE_DIR = Path(__file__).resolve().parents[1]
 INIT_DIR = SERVICE_DIR.parents[1] / "infra" / "postgres" / "init"
 
 
 @pytest.fixture(scope="module")
-def database_urls() -> Iterator[dict[str, str]]:
+def database_urls(postgres_image) -> Iterator[dict[str, str]]:
     """Start PostgreSQL with infra's init script and yield one URL per role."""
     container = (
-        PostgresContainer(POSTGRES_IMAGE, username="postgres", password="admin", driver="psycopg")
+        PostgresContainer(postgres_image, username="postgres", password="admin", driver="psycopg")
         .with_env("CORE_OWNER_PASSWORD", "owner")
         .with_env("CORE_APP_PASSWORD", "app")
         .with_volume_mapping(str(INIT_DIR), "/docker-entrypoint-initdb.d", "ro")

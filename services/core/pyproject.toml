@@ -33,8 +33,14 @@ target-version = "py313"
 line-length = 100
 
 [tool.ruff.lint]
-select = ["E", "F", "I", "B", "UP"]
+# S: security (Bandit), C90: complexity (docs/06 D1.10 and D1.11).
+select = ["E", "F", "I", "B", "UP", "S", "C90"]
+
+[tool.ruff.lint.mccabe]
+max-complexity = 10
 
 [tool.ruff.lint.per-file-ignores]
 # Alembic's template always imports op and sa, even in a migration that does not use them.
 "migrations/versions/*" = ["F401"]
+# Tests use assert (pytest) and throwaway passwords for test databases.
+"tests/*" = ["S101", "S105", "S106"]
