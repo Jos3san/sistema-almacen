@@ -36,14 +36,17 @@ Detalle y criterios de aceptación de cada tarea: `docs/07-backlog.md`.
 - [x] PR fusionado (PR #5, 07/11)
 
 ## T-08 · Integración continua 🧑‍🏫
-- [ ] Workflow de GitHub Actions: Ruff, pytest (con PostgreSQL real) y construcción de la imagen
-- [ ] Extensión de VS Code "GitHub Actions" (`github.vscode-github-actions`)
-- [ ] El ruleset de `main` exige la CI en verde y solo permite fusionar con rebase
-- [ ] Laboratorio: un PR que falla a propósito y GitHub no deja fusionar
-- [ ] README de la raíz con el badge de la CI
+- [x] Workflow de GitHub Actions: Ruff, pytest (con PostgreSQL real) y construcción de la imagen (PR #6, 09/11)
+- [x] Extensión de VS Code "GitHub Actions" (`github.vscode-github-actions`)
+- [x] El ruleset de `main` exige la CI en verde y solo permite fusionar con rebase
+- [x] Laboratorio: el PR #7, roto a propósito, quedó `BLOCKED` y se cerró sin fusionar
+- [x] README de la raíz con el badge de la CI
 
 ## T-09 · Logs estructurados 🛠️
-- [ ] Logs JSON con `X-Request-ID`, sin tokens ni cuerpos
+- [x] Middleware escrito por ti en `main.py`
+- [x] Logs JSON con `X-Request-ID`, sin tokens ni cuerpos (7 tests)
+- [x] El `X-Request-Id` que recibe el navegador es el mismo del log (probado a través de Caddy)
+- [ ] PR fusionado
 
 ## T-10 · Migraciones con Alembic 🧑‍🏫
 - [ ] Alembic configurado con dos usuarios de BD (migraciones y aplicación)

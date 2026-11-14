@@ -1,8 +1,8 @@
 # Guía del código: infraestructura local (`infra/`)
 
-Explicación en español de cómo se levanta el sistema con Docker Compose y del gateway Caddy. Se actualiza **en el mismo Pull Request** que cambia `infra/`.
+Explicación en español de cómo se levanta el sistema con Docker Compose, del gateway Caddy y de la integración continua. Se actualiza **en el mismo Pull Request** que cambia `infra/` o `.github/`.
 
-Última actualización: 07/11/2026 · Semana 2 (T-06 y T-07).
+Última actualización: 09/11/2026 · Semana 2 (T-06, T-07 y T-08).
 
 ## Estructura
 ```
@@ -54,7 +54,7 @@ Pendiente: HSTS se activa con HTTPS real (T-14) y CSP con el frontend (T-13), co
 | `cp infra/.env.example infra/.env` | Crea tu archivo de variables (una sola vez). Cambia la contraseña; `.env` **nunca** se sube |
 | `docker compose -f infra/compose.yaml up -d --build` | Construye core y levanta todo en segundo plano (`--build` solo hace falta si cambió el código de core) |
 | `docker compose -f infra/compose.yaml ps` | Estado de cada servicio; esperar `(healthy)` |
-| `docker compose -f infra/compose.yaml logs core` | Logs de un servicio (`core`, `db` o `gateway`) |
+| `docker compose -f infra/compose.yaml logs core` | Logs de un servicio (`core`, `db` o `gateway`); los de core van en JSON |
 | `docker compose -f infra/compose.yaml stop db` / `start db` | Apaga o enciende un servicio (prueba de caída) |
 | `docker compose -f infra/compose.yaml down` | Apaga y borra los contenedores; **los datos quedan** en el volumen |
 | `docker compose -f infra/compose.yaml down -v` | Además **borra el volumen con los datos**. Solo en local, nunca en producción |
@@ -63,6 +63,26 @@ Pendiente: HSTS se activa con HTTPS real (T-14) y CSP con el frontend (T-13), co
 Direcciones locales:
 - `http://localhost/api/core/health/ready` → estado de core y su base.
 - `http://localhost/api/core/docs` → documentación interactiva de core.
+
+## Integración continua (`.github/workflows/ci.yml`)
+GitHub Actions corre esto en una máquina limpia en cada PR y en cada push a `main`.
+
+| Job | Pasos | Qué protege |
+| --- | --- | --- |
+| `core / lint and tests` | Descarga el código, instala uv 0.13.6, `uv sync --locked`, Ruff (formato y lint), pytest | Estilo, errores y comportamiento, con un PostgreSQL real levantado por Testcontainers. `--locked` falla si `uv.lock` no coincide con `pyproject.toml` |
+| `core / Docker image` | `docker build` con contexto en la raíz, igual que en local (no publica nada) | Que el Dockerfile siga funcionando |
+
+| Decisión | Por qué |
+| --- | --- |
+| `permissions: contents: read` | Mínimo privilegio: el workflow solo puede leer el repositorio |
+| Acciones fijadas por SHA (`actions/checkout@3d3c42e…`, con la versión en un comentario) | Una etiqueta se puede mover; un SHA no (OWASP A03, docs/06 D1.10) |
+| `persist-credentials: false` | El token no queda guardado para los pasos siguientes |
+| `cancel-in-progress` solo en PRs | Un push nuevo cancela la corrida vieja del PR, pero en `main` todo commit debe quedar verificado |
+| `timeout-minutes: 15` | Una corrida colgada se corta sola |
+
+El ruleset `proteger-main` exige los dos jobs en verde y solo permite fusionar con rebase, sin excepciones. Se comprobó con un PR roto a propósito (#7): quedó `BLOCKED` y `main` no cambió. Los nombres de los jobs están registrados en el ruleset: si se renombran en `ci.yml`, hay que actualizarlos allí o ningún PR podrá fusionarse.
+
+**Cómo leer un fallo:** en el PR, **Details** → el paso en rojo. Busca qué falló (`FAILED tests/...`), por qué (`AssertionError: ...`) y dónde (`archivo:línea`).
 
 ## Trampas aprendidas
 - `POSTGRES_PASSWORD` solo se aplica **la primera vez** que se crea el volumen. Para cambiarla en local: editar `.env` y `down -v` + `up -d`. En producción se **rota** sin borrar nada: `ALTER USER … PASSWORD` dentro de PostgreSQL y después el `.env`.

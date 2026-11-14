@@ -2,7 +2,7 @@
 
 Explicación en español de cada archivo y función de `services/core`. Se actualiza **en el mismo Pull Request** que cambia el código (convención en CLAUDE.md). En el código, los comentarios y *docstrings* van en inglés.
 
-Última actualización: 07/11/2026 · Semana 2 (T-07).
+Última actualización: 09/11/2026 · Semana 2 (T-09).
 
 ## Qué es `core`
 El servicio principal del sistema: catálogo, stock, pedidos y despachos (docs/06 D1.2, ADR-0003). Por ahora responde si está vivo y si puede hablar con su base de datos; el negocio se agrega desde la semana 4.
@@ -20,10 +20,12 @@ services/core/
 │       ├── __init__.py marca la carpeta como paquete
 │       ├── config.py   lee la configuración de las variables de entorno
 │       ├── db.py       conexión a PostgreSQL (pool de conexiones)
+│       ├── logging_config.py  logs en JSON por la salida estándar
 │       └── main.py     crea la aplicación FastAPI y sus rutas
 └── tests/
     ├── test_health.py        pruebas de /health
-    └── test_health_ready.py  pruebas de /health/ready contra un PostgreSQL real
+    ├── test_health_ready.py  pruebas de /health/ready contra un PostgreSQL real
+    └── test_logging.py       pruebas de los logs: JSON, request id y datos sensibles
 ```
 Carpetas que se generan solas y **no** se suben a Git: `.venv/` (librerías instaladas), `__pycache__/` (caché de Python), `.pytest_cache/` (caché de pytest).
 
@@ -50,6 +52,22 @@ Carpetas que se generan solas y **no** se suben a Git: `.venv/` (librerías inst
 ¿Por qué dos *health*? `/health` dice "el proceso vive"; `/health/ready` dice "puedo trabajar". Si la base se cae, core sigue vivo pero no listo: así el monitor distingue "reiniciar core" de "revisar la base".
 
 La *docstring* de cada endpoint (el texto entre `"""` debajo del `def`) aparece como descripción en la documentación automática `/docs`.
+
+## Logs (`src/core/logging_config.py` y middleware de `main.py`)
+Cada log es **una línea de JSON** por la salida estándar; Docker la recoge (docs/06 D1.7). Se ven con `docker compose -f infra/compose.yaml logs core`.
+
+| Elemento | Qué es | Para qué |
+| --- | --- | --- |
+| `request_id_var` | `ContextVar`: variable propia de cada petición | Guarda el id de la petición actual. Dos peticiones simultáneas no se mezclan |
+| `JsonFormatter` | Formateador de logging | Arma la línea: `timestamp`, `level`, `logger`, `message`, `request_id`, los campos extra y la excepción si la hay |
+| `configure_logging()` | Configuración única | Envía todo, también lo de Uvicorn, a la salida estándar como JSON. Silencia el log de accesos de Uvicorn, porque el middleware lo reemplaza |
+| `log_requests()` | Middleware: envuelve **todas** las peticiones | Toma `X-Request-ID` del gateway (o crea uno si no hay gateway) y, al terminar, registra método, ruta, estado, duración e IP. `finally` asegura el registro aunque el endpoint falle |
+| `is_quiet` | Regla del middleware | Los `/health` exitosos van a DEBUG (no se muestran): corren cada 10 s y taparían lo demás. Si fallan, sí se ven |
+| `hide_parameters=True` (en `db.py`) | Opción de SQLAlchemy | Los valores de las consultas no aparecen en los mensajes de error |
+
+**Nunca se registran** tokens, cookies, el cuerpo de la petición ni los parámetros de la URL (pueden traer datos personales, como `?dni=...`). Lo comprueban los tests.
+
+Para investigar un error: el navegador (F12 → Network) da el `X-Request-Id`, y con ese valor se filtran todas las líneas de esa petición en los logs.
 
 ## `src/core/config.py` y `src/core/db.py`
 | Elemento | Qué es | Para qué |
@@ -79,6 +97,19 @@ Convenciones de pytest: la carpeta se llama `tests/`, los archivos empiezan con 
 | `test_ready_503_when_database_down` | Test | Base inexistente (puerto 1) → 503 y el cuerpo **no** revela detalles |
 
 Una *fixture* es una preparación que pytest le entrega al test con solo nombrarla como parámetro. Estos tests necesitan **Docker Desktop encendido**.
+
+## `tests/test_logging.py`
+| Elemento | Qué es | Para qué |
+| --- | --- | --- |
+| `_JsonLinesHandler` | Handler de prueba | Guarda cada log como la línea JSON real, formateada durante la petición, cuando el `request_id` existe |
+| `all_logs` / `normal_logs` | *Fixtures* | Capturan los logs a nivel DEBUG o INFO (el de producción) |
+| `test_log_line_is_json_with_request_id` | Test | La línea es JSON válido y lleva el `X-Request-ID` recibido |
+| `test_request_id_is_generated_when_missing` | Test | Sin gateway, el servicio genera un id |
+| `test_logs_never_contain_token_cookie_or_body` | Test | Token, cookie y cuerpo no llegan al log |
+| `test_logs_never_contain_query_string` | Test | Los parámetros de la URL no llegan al log |
+| `test_successful_health_checks_stay_out_of_normal_logs` | Test | Un `/health` exitoso no aparece a nivel INFO |
+| `test_other_requests_appear_in_normal_logs` | Test | Las demás peticiones sí aparecen, aunque fallen |
+| `test_database_errors_hide_query_values` | Test | El motor de base de datos oculta los valores de las consultas |
 
 ## Comandos (desde `services/core`)
 | Comando | Qué hace |

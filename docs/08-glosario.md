@@ -69,6 +69,7 @@ Términos y siglas usados en la documentación del proyecto. Ordenados por tema.
 | Reverse proxy | Servidor que recibe las peticiones y las reenvía al servicio que corresponde (Caddy con `reverse_proxy`) |
 | `X-Request-ID` | Identificador único que el gateway pone a cada petición, para encontrarla en los logs |
 | Pool de conexiones | Conexiones a la base que se abren una vez y se reutilizan (SQLAlchemy), porque abrir una cuesta |
+| Middleware | Código que envuelve todas las peticiones: corre antes y después de cada endpoint (ej. el log de cada petición) |
 | Fixture | Preparación que pytest le entrega a un test con solo nombrarla como parámetro (ej. una base de prueba) |
 | Testcontainers | Librería que levanta contenedores reales y desechables (PostgreSQL) mientras corren los tests |
 | Outbox | Patrón para publicar eventos sin perderlos (ADR-0004, después del MVP) |
