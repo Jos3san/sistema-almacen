@@ -30,6 +30,7 @@ services/core/
 └── tests/
     ├── test_health.py        pruebas de /health
     ├── test_health_ready.py  pruebas de /health/ready contra un PostgreSQL real
+    ├── conftest.py           fixtures compartidas (imagen de PostgreSQL leída de compose.yaml)
     ├── test_logging.py       pruebas de los logs: JSON, request id y datos sensibles
     └── test_migrations.py    pruebas de los usuarios de la base y de las migraciones
 ```
@@ -45,8 +46,9 @@ Carpetas que se generan solas y **no** se suben a Git: `.venv/` (librerías inst
 | `[dependency-groups] dev` | Lo que solo se usa **al desarrollar**: `fastapi[standard]` (comando `fastapi dev` y cliente de tests), `pytest`, `ruff` y `testcontainers[postgres]` (PostgreSQL desechable para los tests). La imagen de producción no los instala |
 | `[build-system]` | Cómo uv empaqueta el código como paquete instalable (`uv_build`) |
 | `[tool.ruff]` | Ruff revisa pensando en Python 3.13, con líneas de hasta 100 caracteres |
-| `[tool.ruff.lint.per-file-ignores]` | En `migrations/versions/` se permite F401: la plantilla de Alembic siempre importa `op` y `sa`, aunque una migración no los use |
-| `[tool.ruff.lint] select` | Familias de reglas activas: **E** estilo, **F** errores reales (imports sin usar, variables no definidas), **I** orden de imports, **B** errores típicos, **UP** sintaxis moderna |
+| `[tool.ruff.lint.per-file-ignores]` | En `migrations/versions/` se permite F401: la plantilla de Alembic siempre importa `op` y `sa`, aunque una migración no los use. En `tests/` se permiten `assert` (S101) y claves de prueba (S105, S106) |
+| `[tool.ruff.lint.mccabe] max-complexity = 10` | Una función con más de 10 caminos posibles (if, for, try…) es un error: hay que partirla (docs/06 D1.11) |
+| `[tool.ruff.lint] select` | Familias de reglas activas: **E** estilo, **F** errores reales (imports sin usar, variables no definidas), **I** orden de imports, **B** errores típicos, **UP** sintaxis moderna, **S** seguridad (Bandit) y **C90** complejidad |
 
 ## `src/core/main.py`
 | Elemento | Qué es | Para qué |
@@ -175,9 +177,11 @@ La imagen empaqueta `core` con Python y sus dependencias para que corra igual en
 | `builder` | Copia `uv` 0.13.6 desde su imagen oficial | Misma herramienta y versión que en local |
 | `builder` | Copia `pyproject.toml` + `uv.lock` y corre `uv sync --locked --no-dev --no-install-project` | Instala solo dependencias. Esa capa queda en caché mientras `uv.lock` no cambie, así cambiar código no reinstala nada |
 | `builder` | Copia `src/` y corre `uv sync --locked --no-dev --no-editable` | Instala el paquete `core` dentro de `.venv`, sin herramientas de desarrollo |
-| `runtime` | Nuevo `FROM` limpio | uv y los archivos temporales no viajan: imagen más pequeña (~233 MB) |
+| `runtime` | Nuevo `FROM` limpio | uv y los archivos temporales no viajan a la imagen final |
+| `runtime` | `apt-get upgrade` y `pip uninstall pip` | Aplica los parches de seguridad del sistema que la imagen base aún no trae y quita `pip`, que el servicio no usa y trae librerías vulnerables. Trade-off: la imagen pasó de ~233 MB a ~339 MB, a cambio de quedar sin vulnerabilidades altas o críticas con arreglo (Trivy, T-20) |
 | `runtime` | Usuario `app` (uid 10001) y `USER app` | El proceso no es *root* |
 | `runtime` | Copia `.venv` **sin** cambiar el dueño | El código queda de *root*: `app` puede leerlo y ejecutarlo, pero no modificarlo |
+| `runtime` | Copia `alembic.ini` y `migrations/` | Las migraciones viajan en la misma imagen; las corre el contenedor `migrate` |
 | `runtime` | `CMD ["uvicorn", "core.main:app", "--host", "0.0.0.0", "--port", "8000"]` | Arranca la API. `0.0.0.0` acepta conexiones desde fuera del contenedor |
 
 El *healthcheck* y la configuración detrás de Caddy no están en la imagen sino en Compose (ver "Cómo se levanta"): la misma imagen sirve para cualquier entorno.
