@@ -13,9 +13,12 @@ def get_engine() -> Engine:
 
     pool_pre_ping discards dead connections (e.g. after a database restart).
     connect_timeout stops a request from hanging when the database is down.
+    hide_parameters keeps query values (personal data) out of error messages
+    and therefore out of the logs (docs/06 D1.7).
     """
     return create_engine(
         get_settings().database_url,
         pool_pre_ping=True,
+        hide_parameters=True,
         connect_args={"connect_timeout": 3},
     )
