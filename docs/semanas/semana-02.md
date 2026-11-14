@@ -53,7 +53,7 @@ Detalle y criterios de aceptación de cada tarea: `docs/07-backlog.md`.
 - [x] Alembic configurado y primera migración creada por ti
 - [x] Contenedor `migrate` de un solo uso antes de core (`Exited (0)`)
 - [x] core se conecta como `core_app`; 4 tests de permisos y migraciones
-- [ ] PR fusionado
+- [x] PR fusionado (PR #9, 14/11)
 
 ## T-20 · Seguridad automatizada en CI (DevSecOps)
 Movida al inicio de la semana 3 (07/11): necesita la CI funcionando. Ver docs/07.

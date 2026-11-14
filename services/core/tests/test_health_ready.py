@@ -10,14 +10,11 @@ from testcontainers.community.postgres import PostgresContainer
 from core.db import get_engine
 from core.main import app
 
-# Same image as infra/compose.yaml: tests run against the version used in production.
-POSTGRES_IMAGE = "postgres:18.6-trixie"
-
 
 @pytest.fixture(scope="module")
-def postgres_url() -> Iterator[str]:
-    """Start a throwaway PostgreSQL container for this module and yield its URL."""
-    with PostgresContainer(POSTGRES_IMAGE, driver="psycopg") as postgres:
+def postgres_url(postgres_image) -> Iterator[str]:
+    """Start a throwaway PostgreSQL container (same image as Compose) and yield its URL."""
+    with PostgresContainer(postgres_image, driver="psycopg") as postgres:
         yield postgres.get_connection_url()
 
 

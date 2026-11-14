@@ -1,0 +1,46 @@
+# Dependabot version updates (T-20, docs/06 D1.10).
+# Every Monday it opens PRs for outdated dependencies; each PR must pass CI.
+# Minor and patch updates are grouped to keep the number of PRs small.
+version: 2
+updates:
+  - package-ecosystem: uv
+    directory: /services/core
+    schedule:
+      interval: weekly
+      day: monday
+      timezone: America/Lima
+    groups:
+      python-minor-patch:
+        update-types: [minor, patch]
+    commit-message:
+      prefix: "build(deps)"
+
+  # Base images in the Dockerfile (Python, uv).
+  - package-ecosystem: docker
+    directory: /services/core
+    schedule:
+      interval: weekly
+      day: monday
+      timezone: America/Lima
+    commit-message:
+      prefix: "build(deps)"
+
+  # Images in compose.yaml (PostgreSQL, Caddy).
+  - package-ecosystem: docker-compose
+    directory: /infra
+    schedule:
+      interval: weekly
+      day: monday
+      timezone: America/Lima
+    commit-message:
+      prefix: "build(deps)"
+
+  # Actions in .github/workflows, pinned by SHA.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      timezone: America/Lima
+    commit-message:
+      prefix: "ci(deps)"
