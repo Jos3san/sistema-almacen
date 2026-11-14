@@ -2,7 +2,7 @@
 
 Explicación en español de cada archivo y función de `services/core`. Se actualiza **en el mismo Pull Request** que cambia el código (convención en CLAUDE.md). En el código, los comentarios y *docstrings* van en inglés.
 
-Última actualización: 09/11/2026 · Semana 2 (T-09).
+Última actualización: 14/11/2026 · Semana 2 (T-10).
 
 ## Qué es `core`
 El servicio principal del sistema: catálogo, stock, pedidos y despachos (docs/06 D1.2, ADR-0003). Por ahora responde si está vivo y si puede hablar con su base de datos; el negocio se agrega desde la semana 4.
@@ -15,6 +15,11 @@ services/core/
 ├── .python-version     fija Python 3.13 para esta carpeta
 ├── README.md           descripción corta y enlace a esta guía
 ├── Dockerfile          receta de la imagen Docker (se construye desde la raíz del repo)
+├── alembic.ini         configuración de Alembic (sin la URL de la base)
+├── migrations/         migraciones de la base de datos
+│   ├── env.py          cómo se conectan y corren las migraciones
+│   ├── script.py.mako  plantilla de cada migración nueva
+│   └── versions/       una migración por archivo, ordenadas por fecha
 ├── src/
 │   └── core/           el paquete de Python "core" (el código de la aplicación)
 │       ├── __init__.py marca la carpeta como paquete
@@ -25,7 +30,8 @@ services/core/
 └── tests/
     ├── test_health.py        pruebas de /health
     ├── test_health_ready.py  pruebas de /health/ready contra un PostgreSQL real
-    └── test_logging.py       pruebas de los logs: JSON, request id y datos sensibles
+    ├── test_logging.py       pruebas de los logs: JSON, request id y datos sensibles
+    └── test_migrations.py    pruebas de los usuarios de la base y de las migraciones
 ```
 Carpetas que se generan solas y **no** se suben a Git: `.venv/` (librerías instaladas), `__pycache__/` (caché de Python), `.pytest_cache/` (caché de pytest).
 
@@ -35,10 +41,11 @@ Carpetas que se generan solas y **no** se suben a Git: `.venv/` (librerías inst
 | Sección | Qué dice |
 | --- | --- |
 | `[project]` | Nombre `core`, versión `0.1.0`, requiere Python ≥ 3.13 |
-| `dependencies` | Lo que necesita **en producción**: `fastapi`, el servidor `uvicorn[standard]`, `sqlalchemy` (hablar con la base desde Python), `psycopg[binary]` (el *driver* que conecta con PostgreSQL) y `pydantic-settings` (leer la configuración) |
+| `dependencies` | Lo que necesita **en producción**: `fastapi`, el servidor `uvicorn[standard]`, `sqlalchemy` (hablar con la base desde Python), `psycopg[binary]` (el *driver* que conecta con PostgreSQL), `pydantic-settings` (leer la configuración) y `alembic` (migraciones; va en producción porque el contenedor `migrate` usa la misma imagen) |
 | `[dependency-groups] dev` | Lo que solo se usa **al desarrollar**: `fastapi[standard]` (comando `fastapi dev` y cliente de tests), `pytest`, `ruff` y `testcontainers[postgres]` (PostgreSQL desechable para los tests). La imagen de producción no los instala |
 | `[build-system]` | Cómo uv empaqueta el código como paquete instalable (`uv_build`) |
 | `[tool.ruff]` | Ruff revisa pensando en Python 3.13, con líneas de hasta 100 caracteres |
+| `[tool.ruff.lint.per-file-ignores]` | En `migrations/versions/` se permite F401: la plantilla de Alembic siempre importa `op` y `sa`, aunque una migración no los use |
 | `[tool.ruff.lint] select` | Familias de reglas activas: **E** estilo, **F** errores reales (imports sin usar, variables no definidas), **I** orden de imports, **B** errores típicos, **UP** sintaxis moderna |
 
 ## `src/core/main.py`
@@ -97,6 +104,35 @@ Convenciones de pytest: la carpeta se llama `tests/`, los archivos empiezan con 
 | `test_ready_503_when_database_down` | Test | Base inexistente (puerto 1) → 503 y el cuerpo **no** revela detalles |
 
 Una *fixture* es una preparación que pytest le entrega al test con solo nombrarla como parámetro. Estos tests necesitan **Docker Desktop encendido**.
+
+## Migraciones (Alembic)
+Una **migración** es un archivo con un cambio a la estructura de la base (crear una tabla, agregar una columna), versionado en Git. Alembic sabe en qué versión está cada base y aplica solo lo que falta: así local, staging y producción tienen siempre la misma estructura, sin cambios a mano.
+
+| Elemento | Qué es | Para qué |
+| --- | --- | --- |
+| `alembic.ini` | Configuración | Dónde están las migraciones y cómo se nombran (`AAAAMMDD_id_descripcion.py`). La URL **no** está aquí. Un *hook* formatea con Ruff cada migración nueva, para que la CI no la rechace |
+| `migrations/env.py` | Entorno de Alembic | Lee la URL de `MIGRATION_DATABASE_URL` (usuario `core_owner`, dueño del esquema), usa los logs JSON y aplica todas las migraciones pendientes en una transacción |
+| `migrations/versions/20261114_638f43de08c5_initial_empty_revision.py` | Primera migración, vacía | Deja la base registrada en la versión 1. `upgrade()` aplica el cambio y `downgrade()` lo deshace |
+| `alembic_version` | Tabla que crea Alembic | Guarda la versión actual de la base |
+
+En Compose, las migraciones las corre el contenedor de un solo uso `migrate` antes de que arranque core (ver docs/codigo/infra.md). core **nunca** migra al arrancar: así, varias copias de core no compiten por migrar, y si una migración falla, core no arranca con una base a medias.
+
+Comandos (desde `services/core`):
+
+| Comando | Qué hace |
+| --- | --- |
+| `uv run alembic revision -m "descripción en inglés"` | Crea una migración nueva y vacía en `migrations/versions/` (no necesita base de datos) |
+| `uv run alembic history` | Lista las migraciones en orden |
+| `docker compose -f infra/compose.yaml run --rm migrate` (desde la raíz) | Aplica las migraciones pendientes en el entorno local |
+
+## `tests/test_migrations.py`
+| Elemento | Qué es | Para qué |
+| --- | --- | --- |
+| `database_urls` | *Fixture* (`scope="module"`) | Levanta PostgreSQL con el script real de `infra/postgres/init` y entrega una URL por usuario |
+| `test_app_role_reads_and_writes_tables_created_by_owner` | Test | `ALTER DEFAULT PRIVILEGES` funciona: `core_app` usa las tablas que crea `core_owner` |
+| `test_app_role_cannot_create_tables` | Test | `core_app` no puede crear tablas |
+| `test_app_role_cannot_drop_tables` | Test | `core_app` no puede borrar tablas |
+| `test_migrations_upgrade_and_downgrade` | Test | Todas las migraciones se aplican desde cero y se pueden deshacer |
 
 ## `tests/test_logging.py`
 | Elemento | Qué es | Para qué |

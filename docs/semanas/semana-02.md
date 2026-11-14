@@ -1,4 +1,4 @@
-# Semana 2 (03/11 – 09/11) · Capa 1: Base técnica
+# Semana 2 (03/11 – 09/11, extendida al 15/11) · Capa 1: Base técnica
 
 Objetivo: que `core` corra en contenedores, detrás del gateway, con CI que bloquee lo que esté roto.
 Marca `[x]` cada punto al terminarlo y anota en "Notas" lo que te costó o aprendiste.
@@ -46,10 +46,14 @@ Detalle y criterios de aceptación de cada tarea: `docs/07-backlog.md`.
 - [x] Middleware escrito por ti en `main.py`
 - [x] Logs JSON con `X-Request-ID`, sin tokens ni cuerpos (7 tests)
 - [x] El `X-Request-Id` que recibe el navegador es el mismo del log (probado a través de Caddy)
-- [ ] PR fusionado
+- [x] PR fusionado (PR #8, 14/11)
 
 ## T-10 · Migraciones con Alembic 🧑‍🏫
-- [ ] Alembic configurado con dos usuarios de BD (migraciones y aplicación)
+- [x] Script de PostgreSQL con dos usuarios: `core_owner` (migraciones) y `core_app` (aplicación, sin poder crear ni borrar tablas)
+- [x] Alembic configurado y primera migración creada por ti
+- [x] Contenedor `migrate` de un solo uso antes de core (`Exited (0)`)
+- [x] core se conecta como `core_app`; 4 tests de permisos y migraciones
+- [ ] PR fusionado
 
 ## T-20 · Seguridad automatizada en CI (DevSecOps)
 Movida al inicio de la semana 3 (07/11): necesita la CI funcionando. Ver docs/07.

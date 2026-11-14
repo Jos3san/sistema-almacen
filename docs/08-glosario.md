@@ -103,6 +103,9 @@ Términos y siglas usados en la documentación del proyecto. Ordenados por tema.
 | `NUMERIC(12,2)` | Tipo exacto para montos (12 dígitos, 2 decimales); nunca `float` |
 | `timestamptz` | Fecha y hora con zona horaria; se guarda en UTC |
 | Migración | Script versionado que cambia la estructura de la base (Alembic) |
+| Rol / usuario de base | Identidad con la que alguien se conecta a PostgreSQL; aquí `core_owner` (dueño del esquema) y `core_app` (solo filas) |
+| `ALTER DEFAULT PRIVILEGES` | Regla de PostgreSQL que da permisos automáticamente sobre las tablas que se creen en el futuro |
+| Contenedor de un solo uso | Contenedor que hace una tarea y termina (`migrate`); `Exited (0)` significa que salió bien |
 | Secuencia | Contador de PostgreSQL; **no** se usa para la numeración de documentos porque salta números si una transacción falla (docs/03 regla 12) |
 | Deadlock | Bloqueo mutuo: dos operaciones esperan cada una a la otra; se evita bloqueando siempre en el mismo orden |
 
