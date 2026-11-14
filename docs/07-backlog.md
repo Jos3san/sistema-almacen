@@ -9,16 +9,19 @@ Parte D3 del diseño (docs/06). Cada historia será un **Issue** en GitHub y una
 - Detalle completo solo hasta la semana 3; de la 4 en adelante se detalla al inicio de cada semana (ADR-0002).
 
 ## Resumen por semana
-| Semana | Capa | Historias |
-| --- | --- | --- |
-| 1 | 0. Preparación | T-01 a T-04 |
-| 2 | 1. Base técnica | T-05 a T-10 |
-| 3 | 2. Auth | HU-01 a HU-06, T-11 a T-13, T-20 y tablero de T-04 |
-| 4 | 3. Catálogo | HU-07 a HU-13 |
-| 5 | 4. Stock | HU-14 a HU-20, T-14 |
-| 6 | 5. Pedidos | HU-21 a HU-27 |
-| 7 | 6. Despachos | HU-28 a HU-32 |
-| 8 | 7. Producción | HU-33 a HU-36, T-15 a T-19 |
+Calendario replanificado el 14/11 (opción A, docs/04): se mantiene el 19/12 y los reportes pasan a enero.
+
+| Semana | Fechas | Capa | Historias |
+| --- | --- | --- | --- |
+| 1 | 28/10 – 05/11 | 0. Preparación | T-01 a T-04 |
+| 2 | 03/11 – 15/11 | 1. Base técnica | T-05 a T-10 |
+| 3 | 16/11 – 22/11 | 2. Auth | HU-01 a HU-06, T-11 a T-13, T-20, tablero de T-04 y plantilla Excel de HU-10 |
+| 4 | 23/11 – 29/11 | 3. Catálogo | HU-07 a HU-13 |
+| 5 | 30/11 – 06/12 | 4. Stock | HU-14 a HU-20, T-14 |
+| 6 | 07/12 – 13/12 | 5. Pedidos | HU-21 a HU-27 |
+| 7 | 14/12 – 19/12 | 6. Despachos + 7. Producción | HU-28 a HU-32, T-15, T-16, T-18 |
+| — | 21/12 – 31/12 | Carga | T-17, T-19 |
+| — | Enero 2027 | Después del MVP | HU-33 a HU-36 (reportes) |
 
 ---
 
@@ -179,7 +182,9 @@ _Movida desde la semana 2 el 07/11: necesita la CI (T-08) funcionando; se recort
 | HU-31 Marcar despacho en camino | Repartidor | UC-24 | S |
 | HU-32 Registrar entrega con rechazo total o parcial y cobro; lo rechazado vuelve al stock y asigna faltantes | Repartidor | UC-25 | M |
 
-## Semana 8 · Capa 7: Producción
+## Capa 7: Producción y reportes
+Replanificado el 14/11: T-15, T-16 y T-18 van en la semana 7 (14/12 – 19/12); T-17 y T-19 en la semana de carga (21/12 – 31/12); HU-33 a HU-36 en enero. T-16 debe estar activo antes del 21/12.
+
 | Historia | Perfil | UC | Tamaño |
 | --- | --- | --- | --- |
 | HU-33 Ver stock actual y stock bajo por ubicación | Dueño | UC-26 | S |
@@ -206,4 +211,4 @@ Lo que depende del dueño y su equipo. Si una se atrasa, bloquea el calendario: 
 | N-07 Conteo físico del inventario inicial, con cada ubicación cerrada (regla 16) | Dueño y equipo | Última semana de diciembre | Arranque en enero |
 | N-08 Definir el día de arranque y estar disponible para la capacitación | Dueño | 19/12 | Arranque en enero |
 
-Si una semana se atrasa, se recorta en este orden (ADR-0005): HU-33 a HU-36 (reportes), HU-17 (transferencias) y HU-26 (detalle de pagos).
+Si una semana se atrasa, se recorta en este orden (ADR-0005): HU-33 a HU-36 (reportes, ya movidos a enero el 14/11), HU-17 (transferencias) y HU-26 (detalle de pagos).

@@ -376,5 +376,5 @@ Hallazgo de esta revisión (**H-10**): en UC-22 (2c) quien despacha puede "cerra
 
 ## Pendientes de diseño de esta parte
 - Elegir el proveedor cloud, el almacenamiento de backups y el **dominio** (antes de la semana 5: staging necesita HTTPS, y HTTPS necesita un dominio o subdominio).
-- El servidor es un punto único de falla: para cumplir el RTO de 1 h hace falta un procedimiento escrito y probado para levantar un servidor nuevo desde el repo y el último backup (runbook, semana 8).
+- El servidor es un punto único de falla: para cumplir el RTO de 1 h hace falta un procedimiento escrito y probado para levantar un servidor nuevo desde el repo y el último backup (runbook, T-17, en la semana de carga: 21/12 – 31/12).
 - El repo es público: revisar que docs/01–05 no tengan datos reales del negocio antes del primer push.
