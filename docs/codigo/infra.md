@@ -2,7 +2,7 @@
 
 Explicación en español de cómo se levanta el sistema con Docker Compose, del gateway Caddy y de la integración continua. Se actualiza **en el mismo Pull Request** que cambia `infra/` o `.github/`.
 
-Última actualización: 14/11/2026 · Semana 2 (T-06 a T-10).
+Última actualización: 14/11/2026 · Semanas 2 y 3 (T-06 a T-10, T-20).
 
 ## Estructura
 ```
@@ -87,8 +87,8 @@ GitHub Actions corre esto en una máquina limpia en cada PR y en cada push a `ma
 
 | Job | Pasos | Qué protege |
 | --- | --- | --- |
-| `core / lint and tests` | Descarga el código, instala uv 0.13.6, `uv sync --locked`, Ruff (formato y lint), pytest | Estilo, errores y comportamiento, con un PostgreSQL real levantado por Testcontainers. `--locked` falla si `uv.lock` no coincide con `pyproject.toml` |
-| `core / Docker image` | `docker build` con contexto en la raíz, igual que en local (no publica nada) | Que el Dockerfile siga funcionando |
+| `core / lint and tests` | Descarga el código, instala uv 0.13.6, `uv sync --locked`, Ruff (formato y lint, con reglas de seguridad `S` y complejidad `C90`), pytest, **pip-audit** | Estilo, errores y comportamiento, con un PostgreSQL real levantado por Testcontainers. `--locked` falla si `uv.lock` no coincide con `pyproject.toml`. pip-audit falla si una dependencia tiene una vulnerabilidad conocida (CVE) |
+| `core / Docker image` | `docker build` con contexto en la raíz, igual que en local (no publica nada), y **Trivy** | Que el Dockerfile siga funcionando y que la imagen no tenga vulnerabilidades altas o críticas que ya tengan arreglo |
 
 | Decisión | Por qué |
 | --- | --- |
@@ -99,6 +99,21 @@ GitHub Actions corre esto en una máquina limpia en cada PR y en cada push a `ma
 | `timeout-minutes: 15` | Una corrida colgada se corta sola |
 
 El ruleset `proteger-main` exige los dos jobs en verde y solo permite fusionar con rebase, sin excepciones. Se comprobó con un PR roto a propósito (#7): quedó `BLOCKED` y `main` no cambió. Los nombres de los jobs están registrados en el ruleset: si se renombran en `ci.yml`, hay que actualizarlos allí o ningún PR podrá fusionarse.
+
+### Seguridad automatizada (T-20, docs/06 D1.10)
+| Control | Dónde | Qué hace |
+| --- | --- | --- |
+| Secret scanning + push protection | GitHub (configuración del repo) | Rechaza un `git push` que contenga una clave o token |
+| Dependabot alertas | GitHub | Avisa si una dependencia tiene una vulnerabilidad |
+| Dependabot actualizaciones | `.github/dependabot.yml` | Cada lunes abre PRs con versiones nuevas de: dependencias de uv, imágenes del Dockerfile, imágenes de `compose.yaml` y acciones de GitHub. Agrupa las actualizaciones menores. Cada PR pasa por la CI como cualquier otro |
+| Ruff `S` y `C90` | CI, job de tests | Código inseguro (claves escritas en el código, SQL armado con texto) y funciones demasiado complejas |
+| pip-audit | CI, job de tests | Vulnerabilidades conocidas en las versiones exactas de `uv.lock` |
+| Trivy | CI, job de imagen | Vulnerabilidades en los paquetes del sistema y de Python dentro de la imagen |
+| CodeQL | GitHub (configuración por defecto) | Análisis profundo del código en cada PR |
+
+Lección de T-20: pip-audit no encontró nada, pero Trivy sí. Las vulnerabilidades no estaban en nuestras dependencias, sino en la imagen base: paquetes de Debian sin parchear y librerías que vienen **dentro de `pip`**. Por eso el Dockerfile instala los parches del sistema y quita `pip` de la imagen final. Revisar **solo el código** no basta: hay que revisar también el contenedor.
+
+Dependabot no actualiza las versiones escritas dentro de comandos (`aquasec/trivy:0.76.2` y `pip-audit@2.10.1` en `ci.yml`): esas se revisan a mano al cerrar cada capa.
 
 **Cómo leer un fallo:** en el PR, **Details** → el paso en rojo. Busca qué falló (`FAILED tests/...`), por qué (`AssertionError: ...`) y dónde (`archivo:línea`).
 
