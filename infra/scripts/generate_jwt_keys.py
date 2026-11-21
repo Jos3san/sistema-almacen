@@ -39,7 +39,8 @@ def main() -> None:
             serialization.Encoding.PEM, serialization.PublicFormat.SubjectPublicKeyInfo
         )
     )
-    print(f"Created {PRIVATE_KEY.name} and {PUBLIC_KEY.name} in {SECRETS_DIR}")
+    # Only the folder is printed, never the keys (CodeQL: clear-text logging of secrets).
+    print(f"Key pair created in {SECRETS_DIR}")
 
 
 if __name__ == "__main__":
