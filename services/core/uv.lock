@@ -235,7 +235,7 @@ requires-dist = [
 
 [package.metadata.requires-dev]
 dev = [
-    { name = "fastapi", extras = ["standard"], specifier = ">=0.162.2" },
+    { name = "fastapi", extras = ["standard"], specifier = ">=0.165.0" },
     { name = "pytest", specifier = ">=9.2.0" },
     { name = "ruff", specifier = ">=0.17.5" },
     { name = "testcontainers", extras = ["postgres"], specifier = ">=4.15.0" },

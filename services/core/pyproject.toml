@@ -22,7 +22,7 @@ build-backend = "uv_build"
 
 [dependency-groups]
 dev = [
-    "fastapi[standard]>=0.162.2",
+    "fastapi[standard]>=0.165.0",
     "pytest>=9.2.0",
     "ruff>=0.17.5",
     "testcontainers[postgres]>=4.15.0",
