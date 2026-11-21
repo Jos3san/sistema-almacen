@@ -105,7 +105,15 @@ El ruleset `proteger-main` exige los dos jobs en verde y solo permite fusionar c
 | --- | --- | --- |
 | Secret scanning + push protection | GitHub (configuración del repo) | Rechaza un `git push` que contenga una clave o token |
 | Dependabot alertas | GitHub | Avisa si una dependencia tiene una vulnerabilidad |
-| Dependabot actualizaciones | `.github/dependabot.yml` | Cada lunes abre PRs con versiones nuevas de: dependencias de uv, imágenes del Dockerfile, imágenes de `compose.yaml` y acciones de GitHub. Agrupa las actualizaciones menores. Cada PR pasa por la CI como cualquier otro |
+| Dependabot actualizaciones | `.github/dependabot.yml` | Cada lunes abre PRs con versiones nuevas de: dependencias de uv (**todas en un solo PR**, porque todas tocan `pyproject.toml` y `uv.lock`), imágenes del Dockerfile, imágenes de `compose.yaml` y acciones de GitHub. **Ignora** los cambios de versión de Python (solo parches 3.13.x) y las versiones mayores de PostgreSQL: esos se deciden a mano. Cada PR pasa por la CI como cualquier otro |
+
+**Cómo revisar un PR de Dependabot** (CI en verde no basta):
+1. ¿Qué cambia de verdad? Mirar *Files changed*: ¿es un parche (3.3.8 → 3.3.9), una versión menor o una mayor?
+2. ¿Es una decisión de arquitectura? Cambiar de Python o de versión mayor de PostgreSQL no se acepta por un PR automático: se cierra y se planifica (ADR).
+3. ¿Choca con otro PR abierto que toca los mismos archivos? Fusionar uno y pedir a Dependabot `@dependabot rebase` en los otros.
+4. Para versiones mayores de una librería: leer sus notas de versión (*release notes*) antes de fusionar.
+
+Primera tanda (21/11): de 6 PRs, el de Python 3.15 lo rechazó la propia CI (la imagen no compilaba) y se cerró; los demás se fusionan uno por uno con `@dependabot rebase`, y la configuración se ajustó para agrupar desde la siguiente semana.
 | Ruff `S` y `C90` | CI, job de tests | Código inseguro (claves escritas en el código, SQL armado con texto) y funciones demasiado complejas |
 | pip-audit | CI, job de tests | Vulnerabilidades conocidas en las versiones exactas de `uv.lock` |
 | Trivy | CI, job de imagen | Vulnerabilidades en los paquetes del sistema y de Python dentro de la imagen |

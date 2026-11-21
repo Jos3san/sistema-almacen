@@ -1,8 +1,9 @@
 # Dependabot version updates (T-20, docs/06 D1.10).
 # Every Monday it opens PRs for outdated dependencies; each PR must pass CI.
-# Minor and patch updates are grouped to keep the number of PRs small.
 version: 2
 updates:
+  # All Python packages (app, dev and build) in ONE weekly PR: they all edit
+  # pyproject.toml and uv.lock, so separate PRs would conflict with each other.
   - package-ecosystem: uv
     directory: /services/core
     schedule:
@@ -10,7 +11,8 @@ updates:
       day: monday
       timezone: America/Lima
     groups:
-      python-minor-patch:
+      python-packages:
+        patterns: ["*"]
         update-types: [minor, patch]
     commit-message:
       prefix: "build(deps)"
@@ -22,6 +24,11 @@ updates:
       interval: weekly
       day: monday
       timezone: America/Lima
+    ignore:
+      # Changing the Python version (3.13 -> 3.14, 3.15...) is an architecture
+      # decision (ADR-0006), not an automatic update: only patches (3.13.x).
+      - dependency-name: python
+        update-types: ["version-update:semver-major", "version-update:semver-minor"]
     commit-message:
       prefix: "build(deps)"
 
@@ -32,6 +39,10 @@ updates:
       interval: weekly
       day: monday
       timezone: America/Lima
+    ignore:
+      # A new PostgreSQL major version needs a data migration (pg_upgrade): planned by hand.
+      - dependency-name: postgres
+        update-types: ["version-update:semver-major"]
     commit-message:
       prefix: "build(deps)"
 
