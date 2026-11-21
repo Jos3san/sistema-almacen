@@ -1,5 +1,5 @@
 # Image of the core service (T-05, docs/06 D1.5).
-# Build from the REPO ROOT so that libs/ can be copied in later:
+# Build from the REPO ROOT, because it also needs libs/security:
 #   docker build -f services/core/Dockerfile -t core:dev .
 
 # ---- Stage 1: builder — installs dependencies with uv ----
@@ -9,17 +9,22 @@ FROM python:3.13.15-slim-trixie AS builder
 COPY --from=ghcr.io/astral-sh/uv:0.13.6 /uv /bin/uv
 
 # Precompile .py files, copy instead of link, never download another Python.
+# The virtualenv goes to /app/.venv, the same path it will have in the runtime stage.
 ENV UV_COMPILE_BYTECODE=1 \
     UV_LINK_MODE=copy \
-    UV_PYTHON_DOWNLOADS=0
+    UV_PYTHON_DOWNLOADS=0 \
+    UV_PROJECT_ENVIRONMENT=/app/.venv
 
-WORKDIR /app
+# Same folder layout as the repo, so the path dependency ../../libs/security resolves.
+WORKDIR /src/services/core
+COPY libs/security /src/libs/security
 
-# 1) Dependencies only: this layer is cached until uv.lock changes.
+# 1) Dependencies only: this layer is cached until uv.lock or the library change.
 COPY services/core/pyproject.toml services/core/uv.lock services/core/.python-version ./
-RUN uv sync --locked --no-dev --no-install-project
+RUN uv sync --locked --no-dev --no-install-project --no-editable
 
-# 2) Source code, then install the project itself (not editable).
+# 2) Source code, then install the project itself. --no-editable copies everything
+#    into the virtualenv, so the runtime stage needs nothing from /src.
 COPY services/core/README.md ./
 COPY services/core/src ./src
 RUN uv sync --locked --no-dev --no-editable

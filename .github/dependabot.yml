@@ -17,6 +17,20 @@ updates:
     commit-message:
       prefix: "build(deps)"
 
+  # The shared library (libs/security, T-11), same grouping.
+  - package-ecosystem: uv
+    directory: /libs/security
+    schedule:
+      interval: weekly
+      day: monday
+      timezone: America/Lima
+    groups:
+      python-packages:
+        patterns: ["*"]
+        update-types: [minor, patch]
+    commit-message:
+      prefix: "build(deps)"
+
   # Base images in the Dockerfile (Python, uv).
   - package-ecosystem: docker
     directory: /services/core

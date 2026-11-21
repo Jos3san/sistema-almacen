@@ -119,6 +119,7 @@ def test_other_requests_appear_in_normal_logs(normal_logs):
 def test_database_errors_hide_query_values(monkeypatch):
     """The engine keeps query values (personal data) out of its error messages."""
     monkeypatch.setenv("DATABASE_URL", "postgresql+psycopg://user:pass@localhost/db")
+    monkeypatch.setenv("JWT_PUBLIC_KEY_PATH", "/run/secrets/jwt_public.pem")
     get_settings.cache_clear()
     get_engine.cache_clear()
 

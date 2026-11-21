@@ -6,12 +6,14 @@ from time import perf_counter
 from typing import Annotated
 from uuid import uuid4
 
+from almacen_security import TokenClaims
 from fastapi import Depends, FastAPI, Request, Response, status
 from sqlalchemy import Engine, text
 from sqlalchemy.exc import SQLAlchemyError
 
 from core.db import get_engine
 from core.logging_config import configure_logging, request_id_var
+from core.security import guard
 
 configure_logging()
 logger = logging.getLogger(__name__)
@@ -88,3 +90,20 @@ def health_ready(
         response.status_code = status.HTTP_503_SERVICE_UNAVAILABLE
         return {"status": "unavailable"}
     return {"status": "ok"}
+
+
+@app.get(
+    "/v1/me",
+    responses={401: {"description": "Missing or invalid token"}},
+)
+def me(user: Annotated[TokenClaims, Depends(guard.current_user())]) -> dict[str, object]:
+    """Return who is calling, according to their access token (T-11).
+
+    Needs a valid token but no specific permission. The data comes only from
+    the token: core does not ask auth (ADR-0007).
+    """
+    return {
+        "user_id": user.user_id,
+        "name": user.name,
+        "permissions": sorted(user.permissions),
+    }

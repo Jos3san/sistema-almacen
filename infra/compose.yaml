@@ -60,6 +60,11 @@ services:
       # Trust X-Forwarded-For from the gateway, so logs show the client IP.
       # Safe because core has no published port: only the gateway reaches it.
       FORWARDED_ALLOW_IPS: "*"
+      # auth's public key, to validate access tokens without calling auth (ADR-0007).
+      JWT_PUBLIC_KEY_PATH: /run/secrets/jwt_public.pem
+    volumes:
+      # Created by infra/scripts/generate_jwt_keys.py; never committed.
+      - ./secrets/jwt_public.pem:/run/secrets/jwt_public.pem:ro
     depends_on:
       db:
         condition: service_healthy
