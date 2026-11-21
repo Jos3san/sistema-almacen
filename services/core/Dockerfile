@@ -3,7 +3,7 @@
 #   docker build -f services/core/Dockerfile -t core:dev .
 
 # ---- Stage 1: builder — installs dependencies with uv ----
-FROM python:3.13.15-slim-trixie AS builder
+FROM python:3.13.18-slim-trixie AS builder
 
 # Copy the uv binary from its official image (pinned version, same as local).
 COPY --from=ghcr.io/astral-sh/uv:0.13.6 /uv /bin/uv
@@ -30,7 +30,7 @@ COPY services/core/src ./src
 RUN uv sync --locked --no-dev --no-editable
 
 # ---- Stage 2: runtime — only Python + the ready virtualenv ----
-FROM python:3.13.15-slim-trixie AS runtime
+FROM python:3.13.18-slim-trixie AS runtime
 
 # Security fixes for the operating system packages (the base image can lag behind),
 # and remove pip: the service never installs anything at runtime, and the
