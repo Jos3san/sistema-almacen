@@ -2,7 +2,7 @@
 
 Explicación en español de cada archivo y función de `services/core`. Se actualiza **en el mismo Pull Request** que cambia el código (convención en CLAUDE.md). En el código, los comentarios y *docstrings* van en inglés.
 
-Última actualización: 14/11/2026 · Semana 2 (T-10).
+Última actualización: 21/11/2026 · Semana 3 (T-11).
 
 ## Qué es `core`
 El servicio principal del sistema: catálogo, stock, pedidos y despachos (docs/06 D1.2, ADR-0003). Por ahora responde si está vivo y si puede hablar con su base de datos; el negocio se agrega desde la semana 4.
@@ -26,12 +26,14 @@ services/core/
 │       ├── config.py   lee la configuración de las variables de entorno
 │       ├── db.py       conexión a PostgreSQL (pool de conexiones)
 │       ├── logging_config.py  logs en JSON por la salida estándar
+│       ├── security.py  validador de tokens y guardia de endpoints (usa libs/security)
 │       └── main.py     crea la aplicación FastAPI y sus rutas
 └── tests/
     ├── test_health.py        pruebas de /health
     ├── test_health_ready.py  pruebas de /health/ready contra un PostgreSQL real
     ├── conftest.py           fixtures compartidas (imagen de PostgreSQL leída de compose.yaml)
     ├── test_logging.py       pruebas de los logs: JSON, request id y datos sensibles
+    ├── test_me.py            pruebas de GET /v1/me con tokens reales (T-11)
     └── test_migrations.py    pruebas de los usuarios de la base y de las migraciones
 ```
 Carpetas que se generan solas y **no** se suben a Git: `.venv/` (librerías instaladas), `__pycache__/` (caché de Python), `.pytest_cache/` (caché de pytest).
@@ -78,10 +80,19 @@ Cada log es **una línea de JSON** por la salida estándar; Docker la recoge (do
 
 Para investigar un error: el navegador (F12 → Network) da el `X-Request-Id`, y con ese valor se filtran todas las líneas de esa petición en los logs.
 
+## Seguridad (`src/core/security.py` y `GET /v1/me`, T-11)
+| Elemento | Qué es | Para qué |
+| --- | --- | --- |
+| `get_token_validator()` | Función con `@lru_cache` | Crea **una vez** el `TokenValidator` de `libs/security` con la clave pública (`JWT_PUBLIC_KEY_PATH`), el emisor `auth` y el destinatario `almacen` |
+| `guard` | `TokenGuard` | Lo usan los endpoints: `guard.current_user()` (cualquier token válido) o `guard.require("perm.code")` (además, un permiso) |
+| `me()` | Endpoint `GET /v1/me` | Devuelve quién llama, **según su token**: core no le pregunta a auth (ADR-0007). Sin token o con token inválido → 401 |
+
+Las reglas de 401/403 se prueban en `libs/security` (ver docs/codigo/security.md); `test_me.py` comprueba que core está conectado a ellas con su configuración. Los tests reemplazan `get_token_validator` con `app.dependency_overrides`, usando una clave de prueba.
+
 ## `src/core/config.py` y `src/core/db.py`
 | Elemento | Qué es | Para qué |
 | --- | --- | --- |
-| `Settings` | Clase de `pydantic-settings` | Cada campo se lee de la variable de entorno con el mismo nombre en mayúsculas: `database_url` ← `DATABASE_URL`. Si falta, falla con un error que la nombra. Así no hay contraseñas en el código (docs/06 D1.6) |
+| `Settings` | Clase de `pydantic-settings` (`DATABASE_URL`, `JWT_PUBLIC_KEY_PATH`; `JWT_ISSUER` y `JWT_AUDIENCE` tienen valor por defecto) | Cada campo se lee de la variable de entorno con el mismo nombre en mayúsculas: `database_url` ← `DATABASE_URL`. Si falta, falla con un error que la nombra. Así no hay contraseñas en el código (docs/06 D1.6) |
 | `get_settings()` | Función con `@lru_cache` | Lee la configuración una sola vez y la reutiliza |
 | `get_engine()` | Función con `@lru_cache` | Crea **una vez** el *pool* de conexiones de SQLAlchemy. Abrir una conexión cuesta, el pool las reutiliza |
 | `pool_pre_ping=True` | Opción del pool | Antes de usar una conexión, comprueba que sigue viva. Por eso core se recupera solo cuando la base vuelve |
@@ -204,6 +215,7 @@ Docker Desktop debe estar abierto (*Engine running*); si no, `docker` responde `
 | `GET /health` | `200 {"status": "ok"}` | Ninguno | Semana 1 |
 | `GET /docs` | Documentación interactiva (OpenAPI) | Ninguno | Semana 1 |
 | `GET /health/ready` | `200 {"status": "ok"}` o `503 {"status": "unavailable"}` | Ninguno | Semana 2 |
+| `GET /v1/me` | `200 {"user_id", "name", "permissions"}` o `401` | Token válido (sin permiso específico) | Semana 3 |
 
 ## Cómo se levanta
 core corre dentro del entorno de Docker Compose, detrás del gateway Caddy: se usa en `http://localhost/api/core/...` (por ejemplo `http://localhost/api/core/docs`). Comandos y explicación en [infra.md](infra.md).

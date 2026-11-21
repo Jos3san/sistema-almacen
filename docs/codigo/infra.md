@@ -2,7 +2,7 @@
 
 Explicación en español de cómo se levanta el sistema con Docker Compose, del gateway Caddy y de la integración continua. Se actualiza **en el mismo Pull Request** que cambia `infra/` o `.github/`.
 
-Última actualización: 14/11/2026 · Semanas 2 y 3 (T-06 a T-10, T-20).
+Última actualización: 21/11/2026 · Semanas 2 y 3 (T-06 a T-11, T-20).
 
 ## Estructura
 ```
@@ -12,6 +12,9 @@ infra/
 ├── .env              tus valores reales (NO se sube: lo bloquea .gitignore)
 ├── caddy/
 │   └── Caddyfile     configuración del gateway
+├── scripts/
+│   └── generate_jwt_keys.py  genera el par de claves JWT (una vez por entorno)
+├── secrets/          claves JWT generadas (NO se suben: lo bloquea .gitignore)
 └── postgres/
     └── init/
         └── 10-core.sh  crea core_db y sus dos usuarios (solo con el volumen vacío)
@@ -70,6 +73,7 @@ Pendiente: HSTS se activa con HTTPS real (T-14) y CSP con el frontend (T-13), co
 | Comando | Qué hace |
 | --- | --- |
 | `cp infra/.env.example infra/.env` | Crea tu archivo de variables (una sola vez). Cambia las 3 claves; `.env` **nunca** se sube |
+| `uv run --no-project --with cryptography python infra/scripts/generate_jwt_keys.py` | Genera `infra/secrets/jwt_private.pem` y `jwt_public.pem` (una sola vez; nunca sobrescribe). La privada será solo de auth; la pública se monta en core |
 | `docker compose -f infra/compose.yaml up -d --build` | Construye core y levanta todo en segundo plano (`--build` solo hace falta si cambió el código de core) |
 | `docker compose -f infra/compose.yaml ps -a` | Estado de cada servicio, incluidos los que ya terminaron (`migrate`); esperar `(healthy)` |
 | `docker compose -f infra/compose.yaml logs core` | Logs de un servicio (`core`, `migrate`, `db` o `gateway`); los de core y migrate van en JSON |

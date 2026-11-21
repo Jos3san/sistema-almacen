@@ -51,7 +51,7 @@ Herramientas verificadas. Ajustes encontrados antes de la sección B:
 - [x] B2 · Primer commit con la documentación (`2bc43fa docs: add project planning, analysis and design documentation`, 31/10)
 - [x] B3 · Repo público `Jos3san/sistema-almacen` y primer push (31/10); GitHub dibuja los diagramas Mermaid
 - [x] B4 · Ruleset `proteger-main` activo (sin bypass): PR obligatorio con 0 aprobaciones, sin borrar ni force push; Actions exige aprobación a todo contribuyente externo (31/10)
-- [ ] B5 · Tablero GitHub Projects → **movido al inicio de la semana 3** (07/11), con las historias de auth (docs/07, T-04)
+- [x] B5 · Tablero GitHub Projects: movido a la semana 3 y creado el 21/11 con las historias de auth (docs/07, T-04)
 
 ## C. API "hola mundo"
 - [x] C1 · Crear `services/core` con `uv init` en la rama `feat/core-health` (05/11); uv generó la estructura de paquete `src/core/`, que se adoptó en docs/06
