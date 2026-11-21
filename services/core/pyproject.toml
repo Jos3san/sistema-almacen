@@ -9,6 +9,7 @@ authors = [
 requires-python = ">=3.13"
 dependencies = [
     "alembic>=1.20.1",
+    "almacen-security",
     "fastapi>=0.165.0",
     "psycopg[binary]>=3.3.9",
     "pydantic-settings>=2.16.3",
@@ -44,3 +45,6 @@ max-complexity = 10
 "migrations/versions/*" = ["F401"]
 # Tests use assert (pytest) and throwaway passwords for test databases.
 "tests/*" = ["S101", "S105", "S106"]
+
+[tool.uv.sources]
+almacen-security = { path = "../../libs/security" }

@@ -1,0 +1,38 @@
+[project]
+name = "almacen-security"
+version = "0.1.0"
+description = "Shared JWT validation and permission checks for the services (ADR-0007)"
+readme = "README.md"
+authors = [
+    { name = "JSantos", email = "53391239+Jos3san@users.noreply.github.com" }
+]
+requires-python = ">=3.13"
+dependencies = [
+    "fastapi>=0.165.0",
+    "pyjwt[crypto]>=2.15.1",
+]
+
+[build-system]
+requires = ["uv_build>=0.13.9,<0.14.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "httpx2>=0.1.0",
+    "pytest>=9.2.0",
+    "ruff>=0.17.5",
+]
+
+[tool.ruff]
+target-version = "py313"
+line-length = 100
+
+[tool.ruff.lint]
+# Same rules as the services: security (S) and complexity (C90) included.
+select = ["E", "F", "I", "B", "UP", "S", "C90"]
+
+[tool.ruff.lint.mccabe]
+max-complexity = 10
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["S101", "S105", "S106"]

@@ -52,10 +52,21 @@ jobs:
         run: uv run pytest -v
 
       # Known vulnerabilities (CVE) in the exact versions of uv.lock (docs/06 D1.10).
+      # --no-emit-local leaves out libs/security itself (it has no published hash);
+      # its own dependencies, such as PyJWT, are still audited.
       - name: Audit dependencies (pip-audit)
         run: |
-          uv export --frozen --format requirements-txt --no-emit-project -o "$RUNNER_TEMP/requirements.txt"
+          uv export --frozen --format requirements-txt --no-emit-project --no-emit-local -o "$RUNNER_TEMP/requirements.txt"
           uvx pip-audit@2.10.1 -r "$RUNNER_TEMP/requirements.txt" --disable-pip
+
+      # The shared library that core installs (libs/security, T-11): same checks.
+      - name: Shared library libs/security (Ruff and pytest)
+        working-directory: libs/security
+        run: |
+          uv sync --locked
+          uv run ruff format --check .
+          uv run ruff check .
+          uv run pytest -v
 
   core-image:
     name: core / Docker image
