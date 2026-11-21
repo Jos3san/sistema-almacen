@@ -14,14 +14,15 @@ Detalle y criterios de aceptación de cada tarea: `docs/07-backlog.md`.
 - [x] pip-audit en la CI: sin vulnerabilidades conocidas en `uv.lock`
 - [x] Trivy en la CI; la imagen se endureció (parches del sistema y sin `pip`) hasta quedar limpia
 - [x] Los tests leen la imagen de PostgreSQL de `compose.yaml` (una sola versión que mantener)
-- [ ] CodeQL activado en GitHub (configuración por defecto)
-- [ ] PR fusionado
+- [x] CodeQL activado en GitHub (configuración por defecto): analiza Python y GitHub Actions, 0 alertas
+- [x] PR fusionado (PR #10)
 
 ## Tablero (B5 / T-04) 🛠️
 - [ ] Permiso `project` para `gh` y tablero de GitHub Projects con las historias de la semana
 
 ## Plantilla Excel de productos (HU-10) 🧑‍🏫
-- [ ] Plantilla lista para entregar al negocio el 23/11 (N-04)
+- [x] Plantilla `docs/plantillas/Plantilla_Productos.xlsx` (generada por `build_plantilla_productos.py`): ubicaciones, productos, presentaciones, precios por escala y stock mínimo, con validaciones y ejemplos ficticios
+- [ ] Revisada por ti y enviada al dueño el 23/11 (N-04)
 
 ## Auth (HU-01 a HU-06, T-11 a T-13)
 - [ ] Se detalla al empezar la capa
