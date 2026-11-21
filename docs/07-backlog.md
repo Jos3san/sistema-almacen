@@ -145,7 +145,7 @@ _Movida desde la semana 2 el 07/11: necesita la CI (T-08) funcionando; se recort
 | HU-07 Gestionar productos, categorías, marcas, presentaciones con factor y stock mínimo por ubicación | Dueño | UC-04 | L |
 | HU-08 Definir escalas de precio por presentación | Dueño | UC-04 | M |
 | HU-09 Ver y editar el costo solo con `cost.view` | Dueño | UC-04 | S |
-| HU-10 Importar productos desde Excel/CSV con reporte de errores por fila; la **plantilla se entrega al negocio esta semana** para que empiece a llenarla (N-04) | Dueño | UC-05 | M |
+| HU-10 Importar productos desde Excel/CSV con reporte de errores por fila; la **plantilla** (`docs/plantillas/Plantilla_Productos.xlsx`, lista el 21/11) **se entrega al negocio el 23/11** para que empiece a llenarla (N-04) | Dueño | UC-05 | M |
 | HU-11 Gestionar ubicaciones (tienda o almacén) | Dueño | UC-06 | S |
 | HU-12 Gestionar clientes (RUC/DNI, dirección, contacto) | Vendedor, Dueño | UC-07 | S |
 | HU-13 Gestionar proveedores | Dueño | UC-08 | S |
