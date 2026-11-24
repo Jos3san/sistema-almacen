@@ -3,7 +3,7 @@
 #   docker build -f services/auth/Dockerfile -t auth:dev .
 
 # ---- Stage 1: builder — installs dependencies with uv ----
-FROM python:3.13.15-slim-trixie AS builder
+FROM python:3.13.17-slim-trixie AS builder
 
 COPY --from=ghcr.io/astral-sh/uv:0.13.6 /uv /bin/uv
 
@@ -26,7 +26,7 @@ COPY services/auth/src ./src
 RUN uv sync --locked --no-dev --no-editable
 
 # ---- Stage 2: runtime — only Python + the ready virtualenv ----
-FROM python:3.13.15-slim-trixie AS runtime
+FROM python:3.13.17-slim-trixie AS runtime
 
 # OS security fixes and no pip (same reasons as core, T-20).
 RUN apt-get update \
