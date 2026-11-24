@@ -89,3 +89,61 @@ jobs:
           docker run --rm -v /var/run/docker.sock:/var/run/docker.sock
           aquasec/trivy:0.76.2 image --quiet --severity HIGH,CRITICAL
           --ignore-unfixed --exit-code 1 core:ci
+
+  # ---------------- auth (T-12): same checks as core ----------------
+
+  auth-tests:
+    name: auth / lint and tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: services/auth
+    steps:
+      - name: Check out the code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@1db35dd8eee11c5894872e0b383ae6c406cf738d # v10.4.0
+        with:
+          version: "0.13.6"
+          enable-cache: true
+
+      - name: Install dependencies (exactly as in uv.lock)
+        run: uv sync --locked
+
+      - name: Check formatting (Ruff)
+        run: uv run ruff format --check .
+
+      - name: Lint (Ruff)
+        run: uv run ruff check .
+
+      # Testcontainers starts PostgreSQL with infra's init scripts.
+      - name: Run tests (pytest)
+        run: uv run pytest -v
+
+      - name: Audit dependencies (pip-audit)
+        run: |
+          uv export --frozen --format requirements-txt --no-emit-project --no-emit-local -o "$RUNNER_TEMP/requirements.txt"
+          uvx pip-audit@2.10.1 -r "$RUNNER_TEMP/requirements.txt" --disable-pip
+
+  auth-image:
+    name: auth / Docker image
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Check out the code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Build the image
+        run: docker build -f services/auth/Dockerfile -t auth:ci .
+
+      - name: Scan the image (Trivy)
+        run: >-
+          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock
+          aquasec/trivy:0.76.2 image --quiet --severity HIGH,CRITICAL
+          --ignore-unfixed --exit-code 1 auth:ci

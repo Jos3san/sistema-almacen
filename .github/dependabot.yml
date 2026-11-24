@@ -31,9 +31,23 @@ updates:
     commit-message:
       prefix: "build(deps)"
 
-  # Base images in the Dockerfile (Python, uv).
+  # The auth service (T-12), same grouping.
+  - package-ecosystem: uv
+    directory: /services/auth
+    schedule:
+      interval: weekly
+      day: monday
+      timezone: America/Lima
+    groups:
+      python-packages:
+        patterns: ["*"]
+        update-types: [minor, patch]
+    commit-message:
+      prefix: "build(deps)"
+
+  # Base images in the Dockerfiles (Python, uv).
   - package-ecosystem: docker
-    directory: /services/core
+    directories: [/services/core, /services/auth]
     schedule:
       interval: weekly
       day: monday

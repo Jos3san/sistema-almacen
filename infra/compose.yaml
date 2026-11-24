@@ -1,6 +1,6 @@
-# Local environment of the MVP: gateway (Caddy) + core + PostgreSQL (T-06, T-07, T-10, docs/06 D1.2).
-# Start order: db (healthy) -> migrate (runs once and exits) -> core (healthy) -> gateway.
-# Open http://localhost/api/core/docs once everything is healthy.
+# Local environment of the MVP: gateway (Caddy) + auth + core + PostgreSQL (T-06, T-07, T-10, T-12, docs/06 D1.2).
+# Start order: db (healthy) -> migrate jobs (run once and exit) -> auth and core (healthy) -> gateway.
+# Open http://localhost/api/core/docs and http://localhost/api/auth/docs once everything is healthy.
 # From the repo root:  docker compose -f infra/compose.yaml up -d --build
 # Values come from infra/.env (copy infra/.env.example; .env is never committed).
 
@@ -14,9 +14,11 @@ services:
       # Administrator: only creates the databases and roles on the first start.
       POSTGRES_USER: ${POSTGRES_USER:?set POSTGRES_USER in infra/.env}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in infra/.env}
-      # Read by postgres/init/10-core.sh to create core_owner and core_app.
+      # Read by postgres/init/10-core.sh and 20-auth.sh to create each service's roles.
       CORE_OWNER_PASSWORD: ${CORE_OWNER_PASSWORD:?set CORE_OWNER_PASSWORD in infra/.env}
       CORE_APP_PASSWORD: ${CORE_APP_PASSWORD:?set CORE_APP_PASSWORD in infra/.env}
+      AUTH_OWNER_PASSWORD: ${AUTH_OWNER_PASSWORD:?set AUTH_OWNER_PASSWORD in infra/.env}
+      AUTH_APP_PASSWORD: ${AUTH_APP_PASSWORD:?set AUTH_APP_PASSWORD in infra/.env}
     volumes:
       # PostgreSQL 18+ keeps its data under /var/lib/postgresql/18/...:
       # mount the parent folder (not .../data as in older versions).
@@ -31,7 +33,9 @@ services:
       start_period: 10s
     # No "ports": the database is reachable only inside the Docker network (docs/06 D1.10).
 
-  # One-shot container: applies pending migrations as the schema owner and exits.
+  # ---------------- core ----------------
+
+  # One-shot container: applies core's pending migrations as the schema owner and exits.
   migrate:
     build:
       context: ..
@@ -82,6 +86,72 @@ services:
       retries: 3
       start_period: 10s
 
+  # ---------------- auth ----------------
+
+  # One-shot container: applies auth's pending migrations as auth_owner and exits.
+  auth-migrate:
+    build:
+      context: ..
+      dockerfile: services/auth/Dockerfile
+    image: auth:dev
+    command: ["alembic", "upgrade", "head"]
+    restart: "no"
+    environment:
+      MIGRATION_DATABASE_URL: postgresql+psycopg://auth_owner:${AUTH_OWNER_PASSWORD}@db:5432/auth_db
+    depends_on:
+      db:
+        condition: service_healthy
+
+  auth:
+    build:
+      context: ..
+      dockerfile: services/auth/Dockerfile
+    image: auth:dev
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql+psycopg://auth_app:${AUTH_APP_PASSWORD}@db:5432/auth_db
+      UVICORN_ROOT_PATH: /api/auth
+      FORWARDED_ALLOW_IPS: "*"
+      # Only auth has the private key that signs access tokens (ADR-0007).
+      JWT_PRIVATE_KEY_PATH: /run/secrets/jwt_private.pem
+    volumes:
+      - ./secrets/jwt_private.pem:/run/secrets/jwt_private.pem:ro
+    depends_on:
+      db:
+        condition: service_healthy
+      auth-migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "import urllib.request; urllib.request.urlopen('http://localhost:8000/health/ready', timeout=2)"
+      interval: 10s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+
+  # Creates the first owner user (HU-05). Not started by "up": run it once with
+  #   docker compose -f infra/compose.yaml --profile setup run --rm auth-bootstrap
+  auth-bootstrap:
+    image: auth:dev
+    profiles: ["setup"]
+    command: ["python", "-m", "auth.bootstrap"]
+    restart: "no"
+    environment:
+      DATABASE_URL: postgresql+psycopg://auth_app:${AUTH_APP_PASSWORD}@db:5432/auth_db
+      # Required by the settings but never read by this command.
+      JWT_PRIVATE_KEY_PATH: /run/secrets/jwt_private.pem
+      BOOTSTRAP_ADMIN_EMAIL: ${BOOTSTRAP_ADMIN_EMAIL:-}
+      BOOTSTRAP_ADMIN_NAME: ${BOOTSTRAP_ADMIN_NAME:-}
+      BOOTSTRAP_ADMIN_PASSWORD: ${BOOTSTRAP_ADMIN_PASSWORD:-}
+    depends_on:
+      auth-migrate:
+        condition: service_completed_successfully
+
+  # ---------------- gateway ----------------
+
   gateway:
     image: caddy:2.11.9-alpine
     restart: unless-stopped
@@ -98,6 +168,8 @@ services:
       - "127.0.0.1:80:8080"
     depends_on:
       core:
+        condition: service_healthy
+      auth:
         condition: service_healthy
 
 volumes:
