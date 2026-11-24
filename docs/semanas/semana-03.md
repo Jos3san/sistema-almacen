@@ -35,8 +35,21 @@ Detalle y criterios de aceptación de cada tarea: `docs/07-backlog.md`.
 - [x] Script de claves JWT (`infra/scripts/generate_jwt_keys.py`); la pública se monta en core
 - [ ] Probado en Compose y PR fusionado (cierra #26)
 
-## Auth (HU-01 a HU-06, T-12, T-13)
-- [ ] Se detalla al empezar el servicio
+## Auth: servicio, login y sesiones (HU-01 a HU-03, HU-05, T-12) 🧑‍🏫
+- [x] `services/auth` con el mismo patrón que core; `auth_db` con `auth_owner` y `auth_app` (`20-auth.sh`)
+- [x] Migración con tablas y los 4 perfiles por defecto con sus 28 permisos (docs/06 D2)
+- [x] Login con error genérico, mismo tiempo de respuesta y bloqueo a los 5 intentos (HU-01)
+- [x] Refresh rotado con detección de robo (HU-02) y logout (HU-03)
+- [x] Comando del primer dueño (HU-05)
+- [x] Compose (`auth-migrate`, `auth`, `auth-bootstrap`) y gateway en `/api/auth/*`; CI y Dependabot para auth
+- [x] 22 tests contra PostgreSQL real; imagen limpia en Trivy
+- [ ] Probado de punta a punta: login en auth → token → `/api/core/v1/me`
+- [ ] Ruleset: exigir también `auth / lint and tests` y `auth / Docker image`
+- [ ] PR fusionado (cierra #20, #21, #22, #24, #27)
+
+## Pendiente de la semana
+- [ ] HU-04 Gestionar usuarios y permisos (#23)
+- [ ] HU-06 Pantalla de login y T-13 Base del frontend (#25, #28)
 
 ## Notas
 Tu retrospectiva (también va resumida en docs/00, sección 7). Unas líneas por pregunta:
