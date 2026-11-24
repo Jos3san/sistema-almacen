@@ -25,6 +25,9 @@ def database_urls(postgres_image) -> Iterator[dict[str, str]]:
         PostgresContainer(postgres_image, username="postgres", password="admin", driver="psycopg")
         .with_env("CORE_OWNER_PASSWORD", "owner")
         .with_env("CORE_APP_PASSWORD", "app")
+        # infra/postgres/init also creates auth_db (20-auth.sh), which needs these.
+        .with_env("AUTH_OWNER_PASSWORD", "auth-owner")
+        .with_env("AUTH_APP_PASSWORD", "auth-app")
         .with_volume_mapping(str(INIT_DIR), "/docker-entrypoint-initdb.d", "ro")
     )
     with container as postgres:
