@@ -1,0 +1,46 @@
+[project]
+name = "auth"
+version = "0.1.0"
+description = "Auth service: users, profiles, permissions and access tokens"
+readme = "README.md"
+authors = [
+    { name = "JSantos", email = "53391239+Jos3san@users.noreply.github.com" }
+]
+requires-python = ">=3.13"
+dependencies = [
+    "alembic>=1.20.1",
+    "argon2-cffi>=25.1.0",
+    "fastapi>=0.165.0",
+    "psycopg[binary]>=3.3.9",
+    "pydantic-settings>=2.16.3",
+    "pyjwt[crypto]>=2.15.1",
+    "sqlalchemy>=2.1.9",
+    "uvicorn[standard]>=0.54.0",
+]
+
+[build-system]
+requires = ["uv_build>=0.13.9,<0.14.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "fastapi[standard]>=0.165.0",
+    "pytest>=9.2.0",
+    "ruff>=0.17.5",
+    "testcontainers[postgres]>=4.15.0",
+]
+
+[tool.ruff]
+target-version = "py313"
+line-length = 100
+
+[tool.ruff.lint]
+# S: security (Bandit), C90: complexity (docs/06 D1.10 and D1.11).
+select = ["E", "F", "I", "B", "UP", "S", "C90"]
+
+[tool.ruff.lint.mccabe]
+max-complexity = 10
+
+[tool.ruff.lint.per-file-ignores]
+"migrations/versions/*" = ["F401"]
+"tests/*" = ["S101", "S105", "S106"]

@@ -19,6 +19,12 @@
 		-Via
 	}
 
+	handle_path /api/auth/* {
+		reverse_proxy auth:8000 {
+			header_up X-Request-ID {http.request.uuid}
+		}
+	}
+
 	handle_path /api/core/* {
 		reverse_proxy core:8000 {
 			header_up X-Request-ID {http.request.uuid}
