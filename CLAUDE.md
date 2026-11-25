@@ -52,6 +52,8 @@ Detalle en `docs/03-modelo-datos-y-reglas.md`.
 - Nivel: conoce el ciclo de vida del software en teoría, pero es **principiante en programación y DevOps**. Guiarlo paso a paso: explicar el concepto, que él ejecute el paso, verificar juntos el resultado. No generar grandes bloques de código sin explicarlos.
 - Aprende haciendo: avanzar en pasos concretos y funcionales, una capa a la vez.
 - Ser honesto con los trade-offs (p. ej. costo operativo de microservicios).
+- **Acuerdo de trabajo (25/11, auditoría R-2):** prioridad = entregar a tiempo **sin desastres**, y que Jossan pueda escribir y mantener el código. Lo nuevo (un patrón, una pieza difícil) lo escribe Claude explicándolo; **lo que repite un patrón ya existente lo escribe Jossan**, guiado paso a paso (qué archivo, qué bloque, por qué), y Claude revisa antes del commit. Si el calendario aprieta, se decide explícitamente quién escribe cada pieza.
+- Mejoras diferidas y riesgos: `docs/10-deuda-tecnica.md`, con el disparador de cada una. No adelantar una mejora antes de su disparador (crecimiento orgánico); revisarlo en cada retrospectiva.
 
 ## Documentos
 - `docs/00-ciclo-de-vida.md` — ciclo de vida (SDLC), flujo de trabajo y plan de aprendizaje DevOps
@@ -64,10 +66,11 @@ Detalle en `docs/03-modelo-datos-y-reglas.md`.
 - `docs/07-backlog.md` — backlog del MVP (D3): historias HU y técnicas T por semana; detalle completo hasta la semana 3
 - `docs/08-glosario.md` — términos del negocio y siglas (agregar aquí toda sigla nueva)
 - `docs/09-modelo-fisico.md` — modelo físico de la BD por módulo (D4): tablas, restricciones, reglas, API y permisos
+- `docs/10-deuda-tecnica.md` — mejoras diferidas con su disparador y riesgos no técnicos (auditoría del 25/11)
 - `docs/codigo/` — guía en español del código de cada servicio (estructura, archivos, funciones, comandos); `core.md` desde el 05/11, `infra.md` (Compose, Caddy y CI) desde el 07/11, `security.md` (libs/security) y `auth.md` desde el 21–22/11
 - `docs/entrevista/resultados.md` — resumen de la entrevista, decisiones, riesgos y pendientes
 - `D:/proyectoLibreria-privado/Guia_Entrevista_Sistema_Almacen.xlsx` (**privado, fuera del repo**) — **entrevista respondida**: col. G = respuesta original; col. J–N = respuesta consolidada, decisión, RF/RNF, UC y alcance (fuente para generar documentos)
 - `D:/proyectoLibreria-privado/docs-reales/` y `CLAUDE-real.md` — copia de los docs con las cifras reales del negocio (31/10/2026). Si un doc público cambia una decisión, actualizar también la copia privada si afecta a cifras reales.
 - `docs/entrevista/Guia_Entrevista_Sistema_Almacen.xlsx` — plantilla en blanco generada por `build_guia.py`
-- `docs/adr/` — decisiones de arquitectura (0001–0007)
+- `docs/adr/` — decisiones de arquitectura (0001–0012)
 - `docs/semanas/` — checklist de seguimiento por semana (qué está hecho, qué hace el usuario y qué se le muestra)

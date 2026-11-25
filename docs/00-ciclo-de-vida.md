@@ -108,5 +108,7 @@ Al cerrar cada capa, unas líneas que responden:
 2. ¿Qué costó más de lo esperado y por qué?
 3. ¿Qué cambio concreto hago en la próxima capa?
 
+En cada retrospectiva también se revisan los disparadores de `docs/10-deuda-tecnica.md`.
+
 ### Capa 0 · Preparación (cerrada el 05/11)
 _(pendiente: la escribe Jossan)_

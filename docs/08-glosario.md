@@ -75,6 +75,9 @@ Términos y siglas usados en la documentación del proyecto. Ordenados por tema.
 | Fixture | Preparación que pytest le entrega a un test con solo nombrarla como parámetro (ej. una base de prueba) |
 | Testcontainers | Librería que levanta contenedores reales y desechables (PostgreSQL) mientras corren los tests |
 | Outbox | Patrón para publicar eventos sin perderlos (ADR-0004, después del MVP) |
+| Deuda técnica | Mejora que sabemos necesaria pero se pospone a propósito; se anota con su disparador (docs/10) |
+| Disparador | Señal concreta de que una mejora diferida ya hace falta (ej. "nace el segundo módulo") |
+| Regla de tres | Se crea una abstracción compartida recién cuando hay tres copias, no antes |
 | Idempotencia | Repetir una operación da el mismo resultado; evita pedidos duplicados (`Idempotency-Key`) |
 | KISS | *Keep It Simple*: elegir la solución más simple que funcione (docs/06 D1.11) |
 | YAGNI | *You Aren't Gonna Need It*: no construir algo "por si acaso" |
