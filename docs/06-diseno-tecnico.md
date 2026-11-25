@@ -8,7 +8,7 @@ Continúa la fase de **Diseño** del ciclo de vida (docs/00). docs/03 dice *qué
 | D1 | Arquitectura (C4 niveles 1 y 2) y flujos principales | Hecho (31/10), diagramas probados | Semana 2 |
 | D2 | Catálogo de permisos (código de permiso por caso de uso) | Hecho (31/10) | Semana 3 |
 | D3 | Backlog: historias de usuario con criterios de aceptación (docs/07) | Hecho (31/10): detalle hasta la semana 3 | Semana 2 en adelante |
-| D4 | Modelo físico de BD (ERD, claves, índices, constraints) por módulo | Pendiente | Semana 3 (auth), 4 (catálogo), 5 (stock), 6 (pedidos) |
+| D4 | Modelo físico de BD (ERD, claves, índices, constraints) por módulo | En curso: auth (22/11) y catálogo (25/11) en docs/09-modelo-fisico.md | Semana 3 (auth), 4 (catálogo), 5 (stock), 6 (pedidos) |
 | D5 | Contrato de API (endpoints por caso de uso) | Pendiente | Cada semana, con su capa |
 | D6 | Bocetos de pantallas por perfil (celular primero para vendedores) | Pendiente | Cada semana, con su capa |
 | D7 | Plan de pruebas (un test por regla de docs/03) | Pendiente | Semana 2, y crece cada semana |

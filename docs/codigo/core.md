@@ -2,7 +2,7 @@
 
 Explicación en español de cada archivo y función de `services/core`. Se actualiza **en el mismo Pull Request** que cambia el código (convención en CLAUDE.md). En el código, los comentarios y *docstrings* van en inglés.
 
-Última actualización: 21/11/2026 · Semana 3 (T-11).
+Última actualización: 25/11/2026 · Semana 4 (catálogo, parte 1).
 
 ## Qué es `core`
 El servicio principal del sistema: catálogo, stock, pedidos y despachos (docs/06 D1.2, ADR-0003). Por ahora responde si está vivo y si puede hablar con su base de datos; el negocio se agrega desde la semana 4.
@@ -24,7 +24,10 @@ services/core/
 │   └── core/           el paquete de Python "core" (el código de la aplicación)
 │       ├── __init__.py marca la carpeta como paquete
 │       ├── config.py   lee la configuración de las variables de entorno
-│       ├── db.py       conexión a PostgreSQL (pool de conexiones)
+│       ├── db.py       conexión a PostgreSQL, Base de las tablas y sesión por petición
+│       ├── errors.py   errores del dominio (404, 409, 422)
+│       ├── audit/      registro de auditoría (solo inserciones)
+│       ├── catalog/    catálogo: models, schemas, repository, service, api
 │       ├── logging_config.py  logs en JSON por la salida estándar
 │       ├── security.py  validador de tokens y guardia de endpoints (usa libs/security)
 │       └── main.py     crea la aplicación FastAPI y sus rutas
@@ -33,6 +36,7 @@ services/core/
     ├── test_health_ready.py  pruebas de /health/ready contra un PostgreSQL real
     ├── conftest.py           fixtures compartidas (imagen de PostgreSQL leída de compose.yaml)
     ├── test_logging.py       pruebas de los logs: JSON, request id y datos sensibles
+    ├── test_catalog.py       pruebas del catálogo contra PostgreSQL real (18)
     ├── test_me.py            pruebas de GET /v1/me con tokens reales (T-11)
     └── test_migrations.py    pruebas de los usuarios de la base y de las migraciones
 ```
@@ -79,6 +83,23 @@ Cada log es **una línea de JSON** por la salida estándar; Docker la recoge (do
 **Nunca se registran** tokens, cookies, el cuerpo de la petición ni los parámetros de la URL (pueden traer datos personales, como `?dni=...`). Lo comprueban los tests.
 
 Para investigar un error: el navegador (F12 → Network) da el `X-Request-Id`, y con ese valor se filtran todas las líneas de esa petición en los logs.
+
+## Catálogo (`src/core/catalog/`, semana 4)
+Primer módulo con lógica de negocio. Diseño completo (tablas, reglas, API y permisos) en **docs/09-modelo-fisico.md**. Sigue las capas de docs/06 D1.11:
+
+| Archivo | Capa | Qué hace |
+| --- | --- | --- |
+| `models.py` | Tablas | `Category`, `Brand`, `Location`, `Product`, `Presentation`, `PriceTier`, `MinimumStock` (SQLAlchemy) |
+| `schemas.py` | Entrada y salida | Pydantic. Los cuerpos de petición (`_In`) **rechazan campos desconocidos**: enviar `factor` al editar una presentación da 422 en vez de ignorarse en silencio (evita la *asignación masiva*) |
+| `repository.py` | Consultas | Búsquedas, "¿ya existe este nombre/SKU/código?", carga de presentaciones y precios en 2 consultas (no una por producto) |
+| `service.py` | Reglas | Presentación base automática; factor inmutable; códigos de barras únicos entre productos **y** presentaciones; la presentación base no se desactiva; cada cambio + su auditoría en **una** transacción |
+| `api.py` | HTTP | Endpoints y permisos. El costo solo sale en la respuesta con `cost.view`, y enviarlo sin ese permiso da 403 |
+
+**Errores del dominio** (`errors.py`): el servicio lanza `NotFoundError` (404), `ConflictError` (409, p. ej. SKU repetido) o `BusinessRuleError` (422, p. ej. desactivar la presentación base), y `main.py` los convierte en respuestas HTTP. Así el servicio no sabe nada de HTTP y se puede probar solo.
+
+**Auditoría** (`audit/`): `audit.record(...)` agrega una entrada en la transacción de quien llama: si el cambio se deshace, la entrada también. Quién la hizo sale del token (core no le pregunta a auth). La migración le quita a `core_app` UPDATE, DELETE y TRUNCATE sobre `audit_log`: aunque el código tuviera un error, la auditoría no se puede alterar (lo prueba un test).
+
+**Migración** `20261125_b7c1d2e3f4a5_catalog_and_audit_log.py`: crea las tablas con todas sus restricciones (`factor >= 1`, `price > 0`, SKU único sin importar mayúsculas…), índices para buscar por nombre y el `REVOKE` de la auditoría.
 
 ## Seguridad (`src/core/security.py` y `GET /v1/me`, T-11)
 | Elemento | Qué es | Para qué |
@@ -216,6 +237,7 @@ Docker Desktop debe estar abierto (*Engine running*); si no, `docker` responde `
 | `GET /docs` | Documentación interactiva (OpenAPI) | Ninguno | Semana 1 |
 | `GET /health/ready` | `200 {"status": "ok"}` o `503 {"status": "unavailable"}` | Ninguno | Semana 2 |
 | `GET /v1/me` | `200 {"user_id", "name", "permissions"}` o `401` | Token válido (sin permiso específico) | Semana 3 |
+| Catálogo: `/v1/categories`, `/v1/brands`, `/v1/locations`, `/v1/products`, `/v1/presentations/{id}`, `.../price-tiers`, `.../minimum-stock/{location_id}` | Ver la tabla de API de docs/09 | `catalog.manage`, `price.edit`, `cost.view`, `location.manage`, `stock.read` o solo sesión | Semana 4 |
 
 ## Cómo se levanta
 core corre dentro del entorno de Docker Compose, detrás del gateway Caddy: se usa en `http://localhost/api/core/...` (por ejemplo `http://localhost/api/core/docs`). Comandos y explicación en [infra.md](infra.md).
