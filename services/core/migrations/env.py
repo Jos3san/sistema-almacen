@@ -9,12 +9,15 @@ import os
 from alembic import context
 from sqlalchemy import create_engine, pool
 
+import core.audit.models  # noqa: F401  (registers the tables in Base.metadata)
+import core.catalog.models  # noqa: F401
+from core.db import Base
 from core.logging_config import configure_logging
 
 configure_logging()
 
-# Table definitions (SQLAlchemy models) for --autogenerate; none yet.
-target_metadata = None
+# Table definitions, used by --autogenerate to compare with the database.
+target_metadata = Base.metadata
 
 
 def migration_url() -> str:

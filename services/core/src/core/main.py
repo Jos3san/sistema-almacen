@@ -8,10 +8,13 @@ from uuid import uuid4
 
 from almacen_security import TokenClaims
 from fastapi import Depends, FastAPI, Request, Response, status
+from fastapi.responses import JSONResponse
 from sqlalchemy import Engine, text
 from sqlalchemy.exc import SQLAlchemyError
 
+from core.catalog.api import router as catalog_router
 from core.db import get_engine
+from core.errors import BusinessRuleError, ConflictError, DomainError, NotFoundError
 from core.logging_config import configure_logging, request_id_var
 from core.security import guard
 
@@ -20,6 +23,22 @@ logger = logging.getLogger(__name__)
 access_logger = logging.getLogger("core.access")
 
 app = FastAPI(title="core")
+app.include_router(catalog_router)
+
+_ERROR_STATUS = {
+    NotFoundError: status.HTTP_404_NOT_FOUND,
+    ConflictError: status.HTTP_409_CONFLICT,
+    BusinessRuleError: status.HTTP_422_UNPROCESSABLE_CONTENT,
+}
+
+
+@app.exception_handler(DomainError)
+async def domain_error_handler(_: Request, error: DomainError) -> JSONResponse:
+    """Turn the services' domain errors into HTTP answers (docs/06 D1.11)."""
+    return JSONResponse(
+        status_code=_ERROR_STATUS.get(type(error), status.HTTP_400_BAD_REQUEST),
+        content={"detail": str(error)},
+    )
 
 
 @app.middleware("http")
