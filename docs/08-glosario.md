@@ -58,6 +58,8 @@ Términos y siglas usados en la documentación del proyecto. Ordenados por tema.
 | SPA | *Single Page Application*: web que se carga una vez y se actualiza sin recargar (React) |
 | C4 | Modelo de diagramas de arquitectura en 4 niveles: contexto, contenedores, componentes y código |
 | ERD | *Entity-Relationship Diagram*: diagrama de tablas y sus relaciones |
+| Modelo físico (D4) | Las tablas reales con sus claves, restricciones e índices (docs/09) |
+| Asignación masiva | Ataque o error en que el cliente envía campos que no debería poder cambiar; aquí se rechazan con 422 |
 | BD / DB | Base de datos (*database*) |
 | ORM | *Object-Relational Mapping*: trabajar con tablas como objetos de Python (SQLAlchemy) |
 | CRUD | *Create, Read, Update, Delete*: crear, leer, modificar y borrar |
